@@ -13,7 +13,12 @@ SECRETS_NAME = "PromptWireSecrets"
 def get_secrets():
     secret_response = secrets_client.get_secret_value(SecretId=SECRETS_NAME)
     secrets = json.loads(secret_response['SecretString'])
-    return secrets['news_api_url'], secrets['news_api_key'], secrets['dynamodb_table'], secrets['kinesis_stream']
+    return (
+        secrets['news_api_url'],
+        secrets['news_api_key'],
+        secrets['dynamodb_table'],
+        secrets['kinesis_stream']
+    )
 
 def generate_article_id(title, published_at):
     return hashlib.sha256(f"{title}_{published_at}".encode()).hexdigest()
@@ -61,6 +66,7 @@ def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
             'title': title,
             'published_at': published_at,
             'ingested_at': datetime.now(timezone.utc).isoformat(),
+            'url': article.get("url", "")
         })
 
         document_payload = {
@@ -69,6 +75,7 @@ def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
                 "article_id": article_id,
                 "title": title,
                 "published_at": published_at,
+                "url": article.get("url", ""),
                 "source": article.get("source", {}).get("name", "unknown")
             }
         }
