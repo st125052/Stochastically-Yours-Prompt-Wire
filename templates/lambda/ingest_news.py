@@ -2,32 +2,29 @@ import boto3
 import hashlib
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 dynamodb = boto3.resource('dynamodb')
 kinesis = boto3.client('kinesis')
 secrets_client = boto3.client('secretsmanager')
 
-DYNAMO_TABLE = "PromptWireArticles"
-KINESIS_STREAM = "PromptWireIngestionStream"
 SECRETS_NAME = "PromptWireSecrets"  
 
-def get_news_api_key():
+def get_secrets():
     secret_response = secrets_client.get_secret_value(SecretId=SECRETS_NAME)
     secrets = json.loads(secret_response['SecretString'])
-    return secrets['news_api_key']
+    return secrets['news_api_url'], secrets['news_api_key'], secrets['dynamodb_table'], secrets['kinesis_stream']
 
 def generate_article_id(title, published_at):
     return hashlib.sha256(f"{title}_{published_at}".encode()).hexdigest()
 
-def get_api_response(news_api_key):
-    api_url = "https://newsapi.org/v2/top-headlines"
+def get_api_response(api_url, api_key):
     params = {
         "language": "en",
         "pageSize": 10,
     }
     headers = {
-        "Authorization": news_api_key,
+        "Authorization": api_key,
         "Content-Type": "application/json"
     }
     news_response = requests.get(api_url, headers=headers, params=params)
@@ -42,8 +39,10 @@ def get_api_response(news_api_key):
             'body': news_response.json()
         }
     
-def send_to_kinesis_and_dynamo(articles, table):
+def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
     success_count = 0
+    table = dynamodb.Table(table_name)
+    
     for article in articles:
         title = article.get("title")
         content = article.get("content")
@@ -61,7 +60,7 @@ def send_to_kinesis_and_dynamo(articles, table):
             'article_id': article_id,
             'title': title,
             'published_at': published_at,
-            'ingested_at': datetime.utcnow().isoformat()
+            'ingested_at': datetime.now(timezone.utc).isoformat(),
         })
 
         document_payload = {
@@ -75,7 +74,7 @@ def send_to_kinesis_and_dynamo(articles, table):
         }
 
         kinesis.put_record(
-            StreamName=KINESIS_STREAM,
+            StreamName=stream_name,
             PartitionKey=article_id,
             Data=json.dumps(document_payload)
         )
@@ -84,16 +83,16 @@ def send_to_kinesis_and_dynamo(articles, table):
     return success_count
 
 def lambda_handler(event, context):
-    news_api_key = get_news_api_key()
-    table = dynamodb.Table(DYNAMO_TABLE)
+    news_api_url, news_api_key, dynamodb_table, kinesis_stream = get_secrets()
+
     success_count = 0
     articles = []
 
-    news_response = get_api_response(news_api_key)
+    news_response = get_api_response(news_api_url, news_api_key)
 
     if news_response['statusCode'] == 200:
         articles = news_response['body'].get('articles', [])
-        success_count = send_to_kinesis_and_dynamo(articles, table)
+        success_count = send_to_kinesis_and_dynamo(articles, dynamodb_table, kinesis_stream)
 
     return {
         'statusCode': 200,
