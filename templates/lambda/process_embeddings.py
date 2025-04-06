@@ -9,7 +9,7 @@ from langchain.schema import Document
 
 # AWS clients
 secrets_client = boto3.client("secretsmanager")
-SECRETS_NAME = "PromptWireEmbeddingSecrets"
+SECRETS_NAME = "PromptWireSecrets"
 
 def get_secrets():
     response = secrets_client.get_secret_value(SecretId=SECRETS_NAME)
