@@ -1,8 +1,9 @@
 import boto3
+import re
 import hashlib
 import json
 import requests
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 dynamodb = boto3.resource('dynamodb')
 kinesis = boto3.client('kinesis')
@@ -25,12 +26,16 @@ def generate_article_id(title, published_at):
 
 def get_api_response(api_url, api_key):
     params = {
+        "from": (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat(),
+        "to": datetime.now(timezone.utc).isoformat(),
+        "page": 1,
+        "pageSize": 30,
         "language": "en",
-        "pageSize": 10,
+        "order": "desc",
     }
     headers = {
-        "Authorization": api_key,
-        "Content-Type": "application/json"
+        "Accept": "*/*",
+        "X-API-KEY": api_key
     }
     news_response = requests.get(api_url, headers=headers, params=params)
     if news_response.status_code != 200:
@@ -43,6 +48,10 @@ def get_api_response(api_url, api_key):
             'statusCode': 200,
             'body': news_response.json()
         }
+    
+def clean(data):
+    regex_s = re.sub("\\(.+?\\)|[\r\n|\n\r]|-", "", data)
+    return " ".join(regex_s.split())
     
 def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
     success_count = 0
@@ -70,7 +79,7 @@ def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
         })
 
         document_payload = {
-            "page_content": content,
+            "page_content": clean(content),
             "metadata": {
                 "article_id": article_id,
                 "title": title,

@@ -123,7 +123,6 @@ def lambda_handler(event, context):
         "headers": {"Content-Type": "application/json"},
         "body": json.dumps({
             "answer": result["answer"],
-            "sources": sources,
-            "chat_history": updated_history
+            "sources": sources
         })
     }
