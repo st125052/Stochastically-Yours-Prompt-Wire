@@ -69,9 +69,6 @@ def index_article():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-
 @app.route("/query-answer", methods=["POST"])
 def query_answer():
     data = request.get_json()
@@ -125,3 +122,6 @@ def query_answer():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
