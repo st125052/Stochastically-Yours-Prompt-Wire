@@ -73,7 +73,6 @@ def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
             "ingested_at": datetime.now(timezone.utc).isoformat(),
             "source": source,
             "url": url,
-            "content": content,
             "summary": summary
         })
 
@@ -86,7 +85,6 @@ def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
                 "published_at": published_at,
                 "source": source,
                 "url": url,
-                "content": content,
                 "summary": summary
             }
         }

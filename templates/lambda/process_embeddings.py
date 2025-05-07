@@ -1,64 +1,55 @@
-import boto3
 import json
-import base64
-import os
-import weaviate
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores.weaviate import Weaviate as LangWeaviate
-from langchain.schema import Document
+import boto3
+import requests
 
 secrets_client = boto3.client("secretsmanager")
 SECRETS_NAME = "PromptWireSecrets"
 
 def get_secrets():
     response = secrets_client.get_secret_value(SecretId=SECRETS_NAME)
-    secret = json.loads(response["SecretString"])
-    return (
-        secret["openai_api_key"],
-        secret["cluster_url"],
-        secret["cluster_api_write_key"],
-        secret["cluster_class"]
-    )
+    secrets = json.loads(response["SecretString"])
+    return secrets["flask_api_url"]
 
 def lambda_handler(event, context):
     try:
-        openai_key, weaviate_url, weaviate_key, weaviate_class = get_secrets()
-        os.environ["OPENAI_API_KEY"] = openai_key
+        base_url = get_secrets()
+        endpoint = f"{base_url}/index-article"
 
-        # Setup Weaviate client
-        weaviate_client = weaviate.Client(
-            url=weaviate_url,
-            additional_headers={"Authorization": f"Bearer {weaviate_key}"}
-        )
-
-        # Setup LangChain wrapper
-        vectorstore = LangWeaviate(
-            client=weaviate_client,
-            index_name=weaviate_class,
-            text_key="page_content",
-            embedding=OpenAIEmbeddings()
-        )
-
-        success_count = 0
         for record in event["Records"]:
-            payload = json.loads(base64.b64decode(record["kinesis"]["data"]))
-            content = payload.get("page_content", "")
-            metadata = payload.get("metadata", {})
+            payload = json.loads(record["kinesis"]["data"])
 
-            if not content:
+            page_content = payload.get("content") or payload.get("summary")
+            if not page_content:
+                print("Skipping: no content or summary available.")
                 continue
 
-            doc = Document(page_content=content, metadata=metadata)
-            vectorstore.add_documents([doc])
-            success_count += 1
+            metadata = {
+                "title": payload.get("title"),
+                "source": payload.get("source"),
+                "link": payload.get("link"),
+                "publishDate": payload.get("publishDate"),
+                "summary": payload.get("summary"),
+            }
+
+            response = requests.post(
+                endpoint,
+                json={"page_content": page_content, "metadata": metadata},
+                timeout=10
+            )
+
+            if response.status_code != 200:
+                print(f"Failed to index: {response.status_code} - {response.text}")
+            else:
+                print(f"Successfully indexed: {metadata['title']}")
 
         return {
             "statusCode": 200,
-            "body": json.dumps({"message": f"Embedded and indexed {success_count} documents"})
+            "body": json.dumps("All records processed.")
         }
 
     except Exception as e:
+        print(f"Error: {str(e)}")
         return {
             "statusCode": 500,
-            "body": json.dumps({"error": str(e)})
+            "body": json.dumps("Processing failed.")
         }
