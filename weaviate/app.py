@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
@@ -37,6 +38,15 @@ vectorstore = WeaviateVectorStore(
 
 # Flask app
 app = Flask(__name__)
+CORS(app)
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    try:
+        client.is_ready()
+        return jsonify({"status": "healthy"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/index-article", methods=["POST"])
 def index_article():

@@ -1,4 +1,5 @@
 Flask==3.0.2
+Flask-Cors==3.0.10
 weaviate-client>=4.4.4
 python-dotenv
 langchain-openai>=0.0.8
