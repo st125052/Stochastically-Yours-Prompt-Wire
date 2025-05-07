@@ -1,4 +1,5 @@
 import json
+import base64
 import boto3
 import requests
 
@@ -16,20 +17,14 @@ def lambda_handler(event, context):
         endpoint = f"{base_url}/index-article"
 
         for record in event["Records"]:
-            payload = json.loads(record["kinesis"]["data"])
+            payload = json.loads(base64.b64decode(record["kinesis"]["data"]))
 
-            page_content = payload.get("content") or payload.get("summary")
+            page_content = payload.get("page_content")
+            metadata = payload.get("metadata", {})
+
             if not page_content:
-                print("Skipping: no content or summary available.")
+                print("Skipping: empty page_content")
                 continue
-
-            metadata = {
-                "title": payload.get("title"),
-                "source": payload.get("source"),
-                "link": payload.get("link"),
-                "publishDate": payload.get("publishDate"),
-                "summary": payload.get("summary"),
-            }
 
             response = requests.post(
                 endpoint,
@@ -38,9 +33,9 @@ def lambda_handler(event, context):
             )
 
             if response.status_code != 200:
-                print(f"Failed to index: {response.status_code} - {response.text}")
+                print(f"[FAILED] {metadata.get('title')} - {response.status_code}: {response.text}")
             else:
-                print(f"Successfully indexed: {metadata['title']}")
+                print(f"[SUCCESS] Indexed: {metadata.get('title')}")
 
         return {
             "statusCode": 200,
@@ -48,7 +43,7 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"[ERROR] {str(e)}")
         return {
             "statusCode": 500,
             "body": json.dumps("Processing failed.")

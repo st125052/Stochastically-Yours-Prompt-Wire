@@ -26,8 +26,7 @@ def generate_article_id(title, published_at):
 
 def get_api_response(api_url, api_key):
     params = {
-        "language": "en",
-        "pageSize": 100
+        "pagesize": 20
     }
     headers = {
         "X-API-KEY": api_key,
@@ -51,12 +50,15 @@ def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
     for article in articles:
         title = article.get("title")
         content = article.get("content")
+        summary = article.get("summary", "")
         published_at = article.get("publishDate")
         source = article.get("source", "unknown")
         url = article.get("link", "")
-        summary = article.get("summary", "")
 
-        if not title or not content or not published_at:
+        # Use summary if content is missing
+        page_content = content if content else summary
+
+        if not title or not page_content or not published_at:
             continue
 
         article_id = generate_article_id(title, published_at)
@@ -78,7 +80,7 @@ def send_to_kinesis_and_dynamo(articles, table_name, stream_name):
 
         # Send to Kinesis
         document_payload = {
-            "page_content": content,
+            "page_content": page_content,
             "metadata": {
                 "article_id": article_id,
                 "title": title,
