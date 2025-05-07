@@ -64,9 +64,5 @@ def index_article():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.teardown_appcontext
-def close_client(exception):
-    client.close()
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
