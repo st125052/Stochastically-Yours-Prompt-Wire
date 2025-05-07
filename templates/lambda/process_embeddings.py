@@ -7,7 +7,6 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.weaviate import Weaviate as LangWeaviate
 from langchain.schema import Document
 
-# AWS clients
 secrets_client = boto3.client("secretsmanager")
 SECRETS_NAME = "PromptWireSecrets"
 
@@ -16,9 +15,9 @@ def get_secrets():
     secret = json.loads(response["SecretString"])
     return (
         secret["openai_api_key"],
-        secret["weaviate_url"],
-        secret["weaviate_api_key"],
-        secret["weaviate_class"]
+        secret["cluster_url"],
+        secret["cluster_api_write_key"],
+        secret["cluster_class"]
     )
 
 def lambda_handler(event, context):
@@ -26,11 +25,13 @@ def lambda_handler(event, context):
         openai_key, weaviate_url, weaviate_key, weaviate_class = get_secrets()
         os.environ["OPENAI_API_KEY"] = openai_key
 
+        # Setup Weaviate client
         weaviate_client = weaviate.Client(
             url=weaviate_url,
             additional_headers={"Authorization": f"Bearer {weaviate_key}"}
         )
 
+        # Setup LangChain wrapper
         vectorstore = LangWeaviate(
             client=weaviate_client,
             index_name=weaviate_class,
