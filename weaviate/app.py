@@ -89,13 +89,13 @@ def add_article():
 
 @app.route("/weaviate/list-article", methods=["GET"])
 def list_article():
-    title = request.args.get("title")
-    if not title:
-        return jsonify({"error": "Missing title param"}), 400
+    article_id = request.args.get("article_id")
+    if not article_id:
+        return jsonify({"error": "Missing article_id param"}), 400
 
     try:
         results = client.collections.get(WEAVIATE_CLASS).query.fetch_objects(
-            filters=Filter.by_property("title").equal(title),
+            filters=Filter.by_property("article_id").equal(article_id),
             limit=1
         )
         return jsonify([obj.properties for obj in results.objects]), 200
