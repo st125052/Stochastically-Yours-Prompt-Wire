@@ -10,6 +10,7 @@ from langchain.prompts import PromptTemplate
 from langchain_core.documents import Document
 import weaviate
 from weaviate.classes.init import Auth
+from weaviate.classes.query import Filter
 
 load_dotenv()
 
@@ -50,7 +51,7 @@ def health_check():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/index-article", methods=["POST"])
+@app.route("/api/index-article", methods=["POST"])
 def index_article():
     data = request.get_json()
     page_content = data.get("page_content")
@@ -66,7 +67,42 @@ def index_article():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/query-answer", methods=["POST"])
+@app.route("/weaviate/add-article", methods=["POST"])
+def add_article():
+    data = request.get_json()
+    page_content = data.get("page_content")
+    metadata = data.get("metadata", {})
+
+    if not page_content:
+        return jsonify({"error": "Missing page_content"}), 400
+
+    try:
+        client.collections.get(WEAVIATE_CLASS).data.insert(
+            properties={
+                "page_content": page_content,
+                **metadata
+            }
+        )
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/weaviate/list-article", methods=["GET"])
+def list_article():
+    title = request.args.get("title")
+    if not title:
+        return jsonify({"error": "Missing title param"}), 400
+
+    try:
+        results = client.collections.get(WEAVIATE_CLASS).query.fetch_objects(
+            filters=Filter.by_property("title").equal(title),
+            limit=1
+        )
+        return jsonify([obj.properties for obj in results.objects]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/query-answer", methods=["POST"])
 def query_answer():
     data = request.get_json()
     question = data.get("question", "")
@@ -117,6 +153,35 @@ def query_answer():
             "sources": list(set(sources))
         }), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/weaviate/list-articles", methods=["GET"])
+def list_articles():
+    try:
+        results = client.collections.get(WEAVIATE_CLASS).query.fetch_objects(limit=100)
+        return jsonify([obj.properties for obj in results.objects]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/weaviate/delete-article", methods=["DELETE"])
+def delete_article():
+    title = request.args.get("title")
+    if not title:
+        return jsonify({"error": "Missing title param"}), 400
+
+    try:
+        results = client.collections.get(WEAVIATE_CLASS).query.fetch_objects(
+            filters=Filter.by_property("title").equal(title),
+            limit=1
+        )
+        if not results.objects:
+            return jsonify({"error": "Article not found"}), 404
+
+        uid = results.objects[0].uuid
+        client.collections.get(WEAVIATE_CLASS).data.delete_by_id(uid)
+        return jsonify({"status": "deleted", "uuid": uid}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
