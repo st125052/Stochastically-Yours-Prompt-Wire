@@ -26,10 +26,16 @@ OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE"))
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 # Initialize Weaviate client (v4)
-client = weaviate.connect_to_weaviate_cloud(
-    cluster_url=WEAVIATE_URL,
-    auth_credentials=Auth.api_key(WEAVIATE_API_KEY),
-    headers={"X-OpenAI-Api-Key": OPENAI_API_KEY}
+# client = weaviate.connect_to_weaviate_cloud(
+#     cluster_url=WEAVIATE_URL,
+#     auth_credentials=Auth.api_key(WEAVIATE_API_KEY),
+#     headers={"X-OpenAI-Api-Key": OPENAI_API_KEY}
+# )
+
+client = weaviate.connect_to_local(
+    host=WEAVIATE_URL,
+    port=8080,
+    grpc_port=50051,
 )
 
 # Initialize LangChain vector store
