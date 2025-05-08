@@ -11,26 +11,18 @@ from langchain_core.documents import Document
 import weaviate
 from weaviate.classes.init import Auth
 
-# Load environment variables
 load_dotenv()
 
-# Load secrets
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
 WEAVIATE_CLASS = os.getenv("WEAVIATE_CLASS")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE"))
+PORT=int(os.getenv("PORT", 5000))
+DEBUG=os.getenv("DEBUG", "false").lower() == "true"
 
-# Set LangChain key for embeddings
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-
-# Initialize Weaviate client (v4)
-# client = weaviate.connect_to_weaviate_cloud(
-#     cluster_url=WEAVIATE_URL,
-#     auth_credentials=Auth.api_key(WEAVIATE_API_KEY),
-#     headers={"X-OpenAI-Api-Key": OPENAI_API_KEY}
-# )
 
 client = weaviate.connect_to_local(
     host=WEAVIATE_URL,
@@ -39,7 +31,6 @@ client = weaviate.connect_to_local(
     grpc_port=50051,
 )
 
-# Initialize LangChain vector store
 embedding = OpenAIEmbeddings()
 vectorstore = WeaviateVectorStore(
     client=client,
@@ -48,7 +39,6 @@ vectorstore = WeaviateVectorStore(
     embedding=embedding
 )
 
-# Flask app
 app = Flask(__name__)
 CORS(app)
 
@@ -131,4 +121,4 @@ def query_answer():
         return jsonify({"error": str(e)}), 500
     
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=PORT, debug=DEBUG)
