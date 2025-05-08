@@ -34,6 +34,7 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 client = weaviate.connect_to_local(
     host=WEAVIATE_URL,
+    auth_credentials=Auth.api_key(WEAVIATE_API_KEY),
     port=8080,
     grpc_port=50051,
 )
