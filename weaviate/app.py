@@ -16,7 +16,7 @@ load_dotenv()
 
 # Load secrets
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-WEAVIATE_URL = os.getenv("WEAVIATE_URL")
+# WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
 WEAVIATE_CLASS = os.getenv("WEAVIATE_CLASS")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL")
@@ -33,7 +33,7 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 # )
 
 client = weaviate.connect_to_local(
-    host=WEAVIATE_URL,
+    host="127.0.0.1",
     auth_credentials=Auth.api_key(WEAVIATE_API_KEY),
     port=8080,
     grpc_port=50051,
