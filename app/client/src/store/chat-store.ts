@@ -231,24 +231,19 @@ export const useChatStore = create<ChatStore>()(
           const response = await chatApi.getChatHistoryDetail(token, chatId);
           
           // Handle empty or invalid response
-          if (!response?.history?.messages) {
+          if (!Array.isArray(response?.history)) {
             console.log('No chat history found for chat:', chatId);
             set({ isLoading: false });
             return;
           }
 
-          const chatDetail = response.history;
-
           // Convert API messages to our Message format
-          const messages: Message[] = chatDetail.messages.map((msg) => ({
+          const messages: Message[] = response.history.map((msg) => ({
             id: crypto.randomUUID(),
             content: msg.message,
             role: msg.role === "ai" ? "assistant" : "user",
-            timestamp: new Date(msg.timestamp || Date.now()),
-            sources: msg.sources?.map(source => ({
-              url: source.url,
-              title: source.title
-            }))
+            timestamp: new Date(msg.time_stamp || Date.now()),
+            // sources: msg.sources ? msg.sources.map(source => ({ url: source.url, title: source.title })) : undefined
           }));
 
           // Update the chat in our store
@@ -258,7 +253,7 @@ export const useChatStore = create<ChatStore>()(
                 return {
                   ...chat,
                   messages,
-                  title: chatDetail.title || chat.title,
+                  // Optionally update title/updatedAt if available
                   updatedAt: new Date()
                 };
               }

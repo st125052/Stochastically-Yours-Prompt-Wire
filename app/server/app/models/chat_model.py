@@ -12,8 +12,8 @@ def store_message(user_id: str, chat_id: str, role: str, message: str):
 
     chat_table.put_item(Item={
         "user_id": user_id,
-        "chat_id": chat_id,
         "time_stamp": time_stamp,
+        "chat_id": chat_id,
         "role": role,
         "message": message
     })
