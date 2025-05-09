@@ -18,13 +18,15 @@ def user_exists(user_id: str) -> bool:
     response = users_table.get_item(Key={'user_id': user_id})
     return 'Item' in response
 
-def create_user(user_id: str, password: str) -> bool:
+def create_user(user_id: str, name: str, email: str, password: str) -> bool:
     if user_exists(user_id):
         return False
 
     hashed_pw = hash_password(password)
     users_table.put_item(Item={
         'user_id': user_id,
+        'name': name,
+        'email': email,
         'password_hash': hashed_pw,
         'created_at': datetime.now(datetime.UTC).isoformat()
     })

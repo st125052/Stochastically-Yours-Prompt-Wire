@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useToast } from "@/hooks/use-toast";
 
 export type User = {
   id: string;
@@ -66,20 +67,22 @@ export const useAuthStore = create<AuthStore>()(
       register: async (name: string, email: string, password: string) => {
         set({ isLoading: true });
         try {
-          // This would be a real API call
-          await mockApiCall();
-          // Mock user data
-          const user: User = {
-            id: "user-1",
-            email,
-            name,
-          };
-          set({
-            user,
-            token: "mock-jwt-token",
-            isAuthenticated: true,
-            isLoading: false,
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/register`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password }),
           });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Registration failed');
+          }
+
+          const data = await response.json();
+          set({ isLoading: false });
+          return data.user;
         } catch (error) {
           set({ isLoading: false });
           throw error;

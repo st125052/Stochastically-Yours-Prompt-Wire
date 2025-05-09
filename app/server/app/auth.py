@@ -1,3 +1,4 @@
+import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token,
@@ -9,19 +10,29 @@ from app.models.user_model import create_user, get_user, verify_password
 
 auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.route("/signup", methods=["POST"])
-def signup():
+@auth_bp.route("/register", methods=["POST"])
+def register():
     data = request.get_json()
-    user_id = data.get("user_id")
+    name = data.get("name")
+    email = data.get("email")
     password = data.get("password")
 
-    if not user_id or not password:
-        return jsonify({"error": "user_id and password required"}), 400
+    if not name or not email or not password:
+        return jsonify({"error": "name, email and password required"}), 400
 
-    if not create_user(user_id, password):
+    user_id = str(uuid.uuid4())
+
+    if not create_user(user_id, name, email, password):
         return jsonify({"error": "User already exists"}), 409
 
-    return jsonify({"message": "Signup successful"}), 201
+    return jsonify({
+        "message": "Register successful",
+        "user": {
+            "id": user_id,
+            "name": name,
+            "email": email
+        }
+    }), 201
 
 @auth_bp.route("/login", methods=["POST"])
 def login():

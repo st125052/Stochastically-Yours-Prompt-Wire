@@ -48,15 +48,15 @@ export function RegisterForm() {
     try {
       await registerUser(data.name, data.email, data.password);
       toast({
-        title: "Account created",
-        description: "Your account has been created successfully.",
+        title: "Registration successful!",
+        description: "Please login with your credentials to continue.",
       });
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Registration failed",
-        description: "There was an error creating your account. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error creating your account. Please try again.",
       });
     }
   };
