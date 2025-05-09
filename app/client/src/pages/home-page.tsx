@@ -21,7 +21,7 @@ export function HomePage() {
         transition={{ duration: 0.5 }}
       >
         <h1 className="shiny-text text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-zinc-800 to-zinc-500 dark:from-white dark:to-gray-500">
-          AI-Powered FinancialNews Assistant
+          AI-Powered News Assistant
         </h1>
         <p className="mt-6 text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
           Stay informed with PromptWire's AI assistant. Get the latest financial news, analysis,

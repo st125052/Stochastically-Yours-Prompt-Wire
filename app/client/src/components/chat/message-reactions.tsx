@@ -46,7 +46,7 @@ export function MessageReactions() {
   };
 
   return (
-    <div className="flex items-center gap-1 mt-2">
+    <div className="flex items-center gap-1 ml-2">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
