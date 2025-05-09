@@ -149,7 +149,6 @@ const store = create<AuthStore>()(
   )
 );
 
-// Initialize token refresh if we have tokens
 const state = store.getState();
 if (state.accessToken && state.refreshToken) {
   setupTokenRefresh(store);

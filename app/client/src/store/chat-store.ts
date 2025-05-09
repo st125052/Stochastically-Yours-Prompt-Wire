@@ -38,306 +38,286 @@ type ChatStore = {
   loadChatHistory: (token: string) => Promise<void>;
   loadChatHistoryDetail: (token: string, chatId: string) => Promise<void>;
   clearError: () => void;
-  sendMessage: (token: string, message: string) => Promise<void>;
+  sendMessage: (token: string, message: string, numSources?: number) => Promise<void>;
 };
 
-// Custom storage with date handling
-const customStorage = createJSONStorage<ChatStore>(() => localStorage, {
-  reviver: (key, value) => {
-    // Convert ISO date strings back to Date objects
-    if (typeof value === "string" &&
-        (key === "timestamp" || key === "createdAt" || key === "updatedAt") &&
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
-      return new Date(value);
-    }
-    return value;
-  }
-});
+const enablePersistence = import.meta.env.VITE_ENABLE_CHAT_PERSISTENCE === "true";
 
-export const useChatStore = create<ChatStore>()(
-  persist(
-    (set, get) => ({
-      chats: [],
-      currentChatId: null,
-      isLoading: false,
-      error: null,
+const storeFactory = (set: any, get: any) => ({
+  chats: [],
+  currentChatId: null,
+  isLoading: false,
+  error: null,
 
-      createChat: () => {
+  createChat: () => {
+    const newChat: Chat = {
+      id: crypto.randomUUID(),
+      title: "New Chat",
+      messages: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    set((state: any) => ({
+      chats: [newChat, ...state.chats],
+      currentChatId: newChat.id,
+    }));
+
+    return newChat.id;
+  },
+
+  setCurrentChat: (chatId: string) => {
+    set({ currentChatId: chatId });
+  },
+
+  deleteChat: async (chatId: string) => {
+    const accessToken = useAuthStore.getState().accessToken;
+    if (!accessToken) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/delete-chat?chat_id=${chatId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to delete chat on server');
+      set((state: any) => {
+        const newChats = state.chats.filter((chat: any) => chat.id !== chatId);
+        let newCurrentChatId = state.currentChatId;
+        if (state.currentChatId === chatId) {
+          newCurrentChatId = newChats.length > 0 ? newChats[0].id : null;
+        }
+        return {
+          chats: newChats,
+          currentChatId: newCurrentChatId,
+        };
+      });
+    } catch (e) {}
+  },
+
+  addMessage: (content: string, role: "user" | "assistant", sources?: MessageSource[]) => {
+    set((state: any) => {
+      if (!state.currentChatId) {
         const newChat: Chat = {
           id: crypto.randomUUID(),
-          title: "New Chat",
+          title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
           messages: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         };
 
-        set((state) => ({
-          chats: [newChat, ...state.chats],
-          currentChatId: newChat.id,
-        }));
-
-        return newChat.id;
-      },
-
-      setCurrentChat: (chatId: string) => {
-        set({ currentChatId: chatId });
-      },
-
-      deleteChat: async (chatId: string) => {
-        const accessToken = useAuthStore.getState().accessToken;
-        if (!accessToken) return;
-        try {
-          // Call backend to delete chat
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/delete-chat?chat_id=${chatId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
+        return {
+          chats: [
+            {
+              ...newChat,
+              messages: [
+                {
+                  id: crypto.randomUUID(),
+                  content,
+                  role,
+                  timestamp: new Date(),
+                  sources,
+                },
+              ],
             },
-          });
-          if (!res.ok) throw new Error('Failed to delete chat on server');
-          set((state) => {
-            const newChats = state.chats.filter((chat) => chat.id !== chatId);
-            let newCurrentChatId = state.currentChatId;
-            if (state.currentChatId === chatId) {
-              newCurrentChatId = newChats.length > 0 ? newChats[0].id : null;
-            }
-            return {
-              chats: newChats,
-              currentChatId: newCurrentChatId,
-            };
-          });
-        } catch (e) {}
-      },
+            ...state.chats,
+          ],
+          currentChatId: newChat.id,
+        };
+      }
 
-      addMessage: (content: string, role: "user" | "assistant", sources?: MessageSource[]) => {
-        set((state) => {
-          // If there's no current chat, create one
-          if (!state.currentChatId) {
-            const newChat: Chat = {
-              id: crypto.randomUUID(),
-              title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
-              messages: [],
-              createdAt: new Date(),
+      return {
+        chats: state.chats.map((chat: any) => {
+          if (chat.id === state.currentChatId) {
+            const shouldUpdateTitle = chat.messages.length === 0 && role === "user";
+
+            return {
+              ...chat,
+              title: shouldUpdateTitle
+                ? content.slice(0, 30) + (content.length > 30 ? "..." : "")
+                : chat.title,
+              messages: [
+                ...chat.messages,
+                {
+                  id: crypto.randomUUID(),
+                  content,
+                  role,
+                  timestamp: new Date(),
+                  sources,
+                },
+              ],
               updatedAt: new Date(),
             };
+          }
+          return chat;
+        }),
+      };
+    });
+  },
 
+  getCurrentChat: () => {
+    const { chats, currentChatId } = get();
+    return chats.find((chat: any) => chat.id === currentChatId);
+  },
+
+  loadChatHistory: async (token: string) => {
+    if (get().isLoading) return;
+    try {
+      set({ isLoading: true, error: null });
+      const response = await chatApi.getChatHistory(token);
+      if (!response || !Array.isArray(response.chats)) {
+        set({ 
+          error: 'Invalid chat history response', 
+          isLoading: false 
+        });
+        return;
+      }
+      if (response.chats.length === 0) {
+        set({ isLoading: false });
+        return;
+      }
+
+      let chats = response.chats.slice(0, 10).map((item) => ({
+        id: item.chat_id, 
+        title: item.title || "Chat " + item.chat_id.slice(0, 8),
+        messages: [],
+        createdAt: new Date(item.last_used),
+        updatedAt: new Date(item.last_used),
+      }));
+      const seen = new Set();
+      chats = chats.filter((chat: any) => {
+        if (seen.has(chat.id)) return false;
+        seen.add(chat.id);
+        return true;
+      });
+      set({
+        chats,
+        currentChatId: chats.length > 0 ? chats[0].id : get().currentChatId,
+        isLoading: false,
+      });
+    } catch (error) {
+      set({ 
+        error: 'Failed to load chat history. Please try again.', 
+        isLoading: false 
+      });
+    }
+  },
+
+  loadChatHistoryDetail: async (token: string, chatId: string) => {
+    if (get().isLoading) return;
+
+    try {
+      set({ isLoading: true, error: null });
+      const response = await chatApi.getChatHistoryDetail(token, chatId);
+      
+      if (!Array.isArray(response?.history)) {
+        set({ isLoading: false });
+        return;
+      }
+
+      const messages: Message[] = response.history.map((msg) => ({
+        id: crypto.randomUUID(),
+        content: msg.message,
+        role: msg.role === "assistant" ? "assistant" : "user",
+        timestamp: new Date(msg.time_stamp || Date.now()),
+      }));
+
+      set((state: any) => ({
+        chats: state.chats.map((chat: any) => {
+          if (chat.id === chatId) {
             return {
-              chats: [
-                {
-                  ...newChat,
-                  messages: [
-                    {
-                      id: crypto.randomUUID(),
-                      content,
-                      role,
-                      timestamp: new Date(),
-                      sources,
-                    },
-                  ],
-                },
-                ...state.chats,
-              ],
-              currentChatId: newChat.id,
+              ...chat,
+              messages,
+              updatedAt: new Date()
             };
           }
-
-          // Otherwise, add the message to the current chat
-          return {
-            chats: state.chats.map((chat) => {
-              if (chat.id === state.currentChatId) {
-                // Update the chat title if this is the first message
-                const shouldUpdateTitle = chat.messages.length === 0 && role === "user";
-
-                return {
-                  ...chat,
-                  title: shouldUpdateTitle
-                    ? content.slice(0, 30) + (content.length > 30 ? "..." : "")
-                    : chat.title,
-                  messages: [
-                    ...chat.messages,
-                    {
-                      id: crypto.randomUUID(),
-                      content,
-                      role,
-                      timestamp: new Date(),
-                      sources,
-                    },
-                  ],
-                  updatedAt: new Date(),
-                };
-              }
-              return chat;
-            }),
-          };
-        });
-      },
-
-      getCurrentChat: () => {
-        const { chats, currentChatId } = get();
-        return chats.find((chat) => chat.id === currentChatId);
-      },
-
-      loadChatHistory: async (token: string) => {
-        if (get().isLoading) return;
-        try {
-          set({ isLoading: true, error: null });
-          const response = await chatApi.getChatHistory(token);
-          if (!response || !Array.isArray(response.chats)) {
-            set({ 
-              error: 'Invalid chat history response', 
-              isLoading: false 
-            });
-            return;
-          }
-          if (response.chats.length === 0) {
-            set({ isLoading: false });
-            return;
-          }
-          // Preserve the exact chat_id from the backend
-          let chats = response.chats.slice(0, 10).map((item) => ({
-            id: item.chat_id, // Use the exact chat_id from backend
-            title: item.title || "Chat " + item.chat_id.slice(0, 8),
-            messages: [],
-            createdAt: new Date(item.last_used),
-            updatedAt: new Date(item.last_used),
-          }));
-          // Deduplicate by chat id
-          const seen = new Set();
-          chats = chats.filter(chat => {
-            if (seen.has(chat.id)) return false;
-            seen.add(chat.id);
-            return true;
-          });
-          set({
-            chats,
-            currentChatId: chats.length > 0 ? chats[0].id : get().currentChatId,
-            isLoading: false,
-          });
-        } catch (error) {
-          set({ 
-            error: 'Failed to load chat history. Please try again.', 
-            isLoading: false 
-          });
-        }
-      },
-
-      loadChatHistoryDetail: async (token: string, chatId: string) => {
-        if (get().isLoading) return;
-
-        try {
-          set({ isLoading: true, error: null });
-          const response = await chatApi.getChatHistoryDetail(token, chatId);
-          
-          // Handle empty or invalid response
-          if (!Array.isArray(response?.history)) {
-            set({ isLoading: false });
-            return;
-          }
-
-          // Convert API messages to our Message format
-          const messages: Message[] = response.history.map((msg) => ({
-            id: crypto.randomUUID(),
-            content: msg.message,
-            role: msg.role === "assistant" ? "assistant" : "user",
-            timestamp: new Date(msg.time_stamp || Date.now()),
-            // sources: msg.sources ? msg.sources.map(source => ({ url: source.url, title: source.title })) : undefined
-          }));
-
-          // Update the chat in our store
-          set((state) => ({
-            chats: state.chats.map((chat) => {
-              if (chat.id === chatId) {
-                return {
-                  ...chat,
-                  messages,
-                  // Optionally update title/updatedAt if available
-                  updatedAt: new Date()
-                };
-              }
-              return chat;
-            }),
-            isLoading: false,
-          }));
-        } catch (error) {
-          set({ 
-            error: 'Failed to load chat messages. Please try again.', 
-            isLoading: false 
-          });
-        }
-      },
-
-      clearError: () => set({ error: null }),
-
-      sendMessage: async (token: string, message: string) => {
-        if (get().isLoading) {
-          return;
-        }
-
-        try {
-          set({ isLoading: true, error: null });
-
-          let chatId = get().currentChatId;
-          if (!chatId) {
-            chatId = get().createChat();
-          }
-
-          get().addMessage(message, "user");
-
-          const streamingId = crypto.randomUUID();
-          set((state) => ({
-            chats: state.chats.map((chat) =>
-              chat.id === chatId
-                ? {
-                    ...chat,
-                    messages: [
-                      ...chat.messages,
-                      {
-                        id: streamingId,
-                        content: "",
-                        role: "assistant",
-                        timestamp: new Date(),
-                        isStreaming: true,
-                      },
-                    ],
-                  }
-                : chat
-            ),
-          }));
-
-          const response = await chatApi.sendMessage(token, message, chatId);
-
-          set((state) => ({
-            chats: state.chats.map((chat) =>
-              chat.id === chatId
-                ? {
-                    ...chat,
-                    messages: chat.messages.map((msg) =>
-                      msg.id === streamingId
-                        ? {
-                            ...msg,
-                            content: response.response,
-                            sources: response.sources,
-                            isStreaming: false,
-                          }
-                        : msg
-                    ),
-                  }
-                : chat
-            ),
-            isLoading: false,
-          }));
-        } catch (error) {
-          set({
-            error: 'Failed to send message. Please try again.',
-            isLoading: false,
-          });
-        }
-      },
-    }),
-    {
-      name: "promptwire-chats",
-      storage: customStorage,
-      version: 1,
+          return chat;
+        }),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: 'Failed to load chat messages. Please try again.', 
+        isLoading: false 
+      });
     }
-  )
-);
+  },
+
+  clearError: () => set({ error: null }),
+
+  sendMessage: async (token: string, message: string, numSources: number = 3) => {
+    if (get().isLoading) {
+      return;
+    }
+
+    try {
+      set({ isLoading: true, error: null });
+
+      let chatId = get().currentChatId;
+      if (!chatId) {
+        chatId = get().createChat();
+      }
+
+      get().addMessage(message, "user");
+
+      const streamingId = crypto.randomUUID();
+      set((state: any) => ({
+        chats: state.chats.map((chat: any) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                messages: [
+                  ...chat.messages,
+                  {
+                    id: streamingId,
+                    content: "",
+                    role: "assistant",
+                    timestamp: new Date(),
+                    isStreaming: true,
+                  },
+                ],
+              }
+            : chat
+        ),
+      }));
+
+      const response = await chatApi.sendMessage(token, message, chatId, numSources);
+
+      set((state: any) => ({
+        chats: state.chats.map((chat: any) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                messages: chat.messages.map((msg: any) =>
+                  msg.id === streamingId
+                    ? {
+                        ...msg,
+                        content: response.response,
+                        sources: response.sources,
+                        isStreaming: false,
+                      }
+                    : msg
+                ),
+              }
+            : chat
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({
+        error: 'Failed to send message. Please try again.',
+        isLoading: false,
+      });
+    }
+  },
+});
+
+export const useChatStore = enablePersistence
+  ? create(
+      persist(storeFactory, {
+        name: "promptwire-chats",
+        storage: createJSONStorage(() => localStorage),
+        version: 1,
+      })
+    )
+  : create(storeFactory);

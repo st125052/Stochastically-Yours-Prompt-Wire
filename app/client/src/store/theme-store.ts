@@ -17,33 +17,26 @@ export const useThemeStore = create<ThemeState>()(
       isTransitioning: false,
 
       setMode: (mode: ThemeMode) => {
-        // Start transition animation
         set({ isTransitioning: true });
 
-        // Apply theme class immediately for smoother transition
         updateTheme(mode);
 
-        // Update store state
         setTimeout(() => {
           set({ mode, isTransitioning: false });
-        }, 600); // Match with CSS transition duration
+        }, 600); 
       },
 
       toggleMode: () => {
         set((state) => {
-          // Start transition animation
           const isTransitioning = true;
 
-          // Calculate new mode
           const newMode = state.mode === "dark" ? "light" : "dark";
 
-          // Apply theme with animation
           animateThemeChange(newMode);
 
-          // Update store state after animation completes
           setTimeout(() => {
             set({ isTransitioning: false });
-          }, 600); // Match with CSS transition duration
+          }, 600); 
 
           return { mode: newMode, isTransitioning };
         });
@@ -55,7 +48,6 @@ export const useThemeStore = create<ThemeState>()(
   )
 );
 
-// Helper function to update DOM with theme classes
 function updateTheme(mode: ThemeMode) {
   const isDark =
     mode === "dark" ||
@@ -71,16 +63,12 @@ function updateTheme(mode: ThemeMode) {
   }
 }
 
-// Enhanced theme change with visual animation effect
 function animateThemeChange(mode: ThemeMode) {
-  // Create ripple effect
   const ripple = document.createElement('div');
   ripple.className = 'theme-transition-ripple';
 
-  // The actual theme
   const isDark = mode === "dark";
 
-  // Style the ripple
   Object.assign(ripple.style, {
     position: 'fixed',
     top: '50%',
@@ -96,27 +84,21 @@ function animateThemeChange(mode: ThemeMode) {
     opacity: '0.6',
   });
 
-  // Add to DOM
   document.body.appendChild(ripple);
 
-  // Trigger the ripple expansion after a tiny delay
   setTimeout(() => {
-    // Calculate the diagonal of the screen for full coverage
     const maxDimension = Math.max(
       window.innerWidth,
       window.innerHeight
     );
     const size = maxDimension * 3;
 
-    // Expand the ripple
     ripple.style.width = `${size}px`;
     ripple.style.height = `${size}px`;
   }, 50);
 
-  // Update the actual theme
   updateTheme(mode);
 
-  // Remove the ripple element after the transition completes
   setTimeout(() => {
     if (document.body.contains(ripple)) {
       document.body.removeChild(ripple);

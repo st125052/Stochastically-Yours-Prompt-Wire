@@ -82,6 +82,7 @@ export function Sidebar({ className }: SidebarProps) {
   const { chats, currentChatId, createChat, setCurrentChat, deleteChat, loadChatHistory, loadChatHistoryDetail, isLoading } = useChatStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [pendingDeleteChatId, setPendingDeleteChatId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { accessToken } = useAuthStore();
 
   useEffect(() => {
@@ -150,7 +151,7 @@ export function Sidebar({ className }: SidebarProps) {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {chats.map((chat) => (
+                  {chats.map((chat: Chat) => (
                     <ChatItem
                       key={chat.id}
                       chat={chat}
@@ -211,7 +212,7 @@ export function Sidebar({ className }: SidebarProps) {
               </div>
             ) : (
               <div className="space-y-1">
-                {chats.map((chat) => (
+                {chats.map((chat: Chat) => (
                   <ChatItem
                     key={chat.id}
                     chat={chat}
@@ -250,18 +251,22 @@ export function Sidebar({ className }: SidebarProps) {
           </DialogHeader>
           <div>Are you sure you want to delete this chat? This action cannot be undone.</div>
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setPendingDeleteChatId(null)}>
+            <Button variant="outline" onClick={() => setPendingDeleteChatId(null)} disabled={isDeleting}>
               Cancel
             </Button>
             <Button
               variant="destructive"
+              disabled={isDeleting}
               onClick={async () => {
                 if (pendingDeleteChatId) {
+                  setIsDeleting(true);
                   await deleteChat(pendingDeleteChatId);
+                  setIsDeleting(false);
                   setPendingDeleteChatId(null);
                 }
               }}
             >
+              {isDeleting ? <Loader2Icon className="h-4 w-4 animate-spin mr-2" /> : null}
               Delete
             </Button>
           </div>

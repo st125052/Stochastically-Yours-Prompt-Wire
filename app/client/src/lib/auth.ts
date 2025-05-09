@@ -1,4 +1,3 @@
-// Token refresh interval in milliseconds (10 minutes)
 const REFRESH_INTERVAL = 10 * 60 * 1000;
 
 let refreshTimer: NodeJS.Timeout | null = null;

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 import { useChatStore } from "@/store/chat-store";
+import type { Message } from "@/store/chat-store";
 import { Button } from "@/components/ui/button";
 import { ChatBubble } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -94,7 +95,7 @@ export function ChatWindow() {
             </div>
           </div>
         ) : (
-          currentChat?.messages.map((message, idx, arr) => {
+          currentChat?.messages.map((message: Message, idx: number, arr: Message[]) => {
             const isLast = idx === arr.length - 1;
             const isAssistant = message.role === "assistant";
             // Show typing effect only for the last assistant message while loading

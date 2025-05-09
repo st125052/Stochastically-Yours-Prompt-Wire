@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useChatStore, type Chat } from "@/store/chat-store";
+import type { Message } from "@/store/chat-store";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, X } from "lucide-react";
@@ -22,14 +23,14 @@ export function ChatSearch({ onSelect, onClose }: ChatSearchProps) {
       return;
     }
 
-    const filtered = chats.filter((chat) => {
+    const filtered = chats.filter((chat: Chat) => {
       // Search in chat title
       if (chat.title.toLowerCase().includes(query.toLowerCase())) {
         return true;
       }
 
       // Search in messages
-      return chat.messages.some((message) =>
+      return chat.messages.some((message: Message) =>
         message.content.toLowerCase().includes(query.toLowerCase())
       );
     });
@@ -81,7 +82,7 @@ export function ChatSearch({ onSelect, onClose }: ChatSearchProps) {
       <ScrollArea className="flex-1">
         {results.length > 0 ? (
           <div className="space-y-2">
-            {results.map((chat) => (
+            {results.map((chat: Chat) => (
               <button
                 key={chat.id}
                 className="w-full text-left p-3 rounded-md hover:bg-accent/50 focus:bg-accent/50 focus:outline-none transition-colors"
@@ -90,19 +91,19 @@ export function ChatSearch({ onSelect, onClose }: ChatSearchProps) {
                 <div className="font-medium">
                   {highlightText(chat.title, query)}
                 </div>
-                {chat.messages.some(m => m.content.toLowerCase().includes(query.toLowerCase())) && (
+                {chat.messages.some((message: Message) => message.content.toLowerCase().includes(query.toLowerCase())) && (
                   <div className="mt-1 text-sm text-muted-foreground">
                     {chat.messages
-                      .filter(m => m.content.toLowerCase().includes(query.toLowerCase()))
+                      .filter((message: Message) => message.content.toLowerCase().includes(query.toLowerCase()))
                       .slice(0, 1)
-                      .map((message, idx) => (
+                      .map((message: Message, idx: number) => (
                         <div key={idx} className="truncate">
                           {highlightText(message.content, query)}
                         </div>
                       ))}
-                    {chat.messages.filter(m => m.content.toLowerCase().includes(query.toLowerCase())).length > 1 && (
+                    {chat.messages.filter((message: Message) => message.content.toLowerCase().includes(query.toLowerCase())).length > 1 && (
                       <div className="text-xs italic mt-0.5">
-                        + {chat.messages.filter(m => m.content.toLowerCase().includes(query.toLowerCase())).length - 1} more results
+                        + {chat.messages.filter((message: Message) => message.content.toLowerCase().includes(query.toLowerCase())).length - 1} more results
                       </div>
                     )}
                   </div>
