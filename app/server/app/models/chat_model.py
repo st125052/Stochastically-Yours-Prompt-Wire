@@ -49,8 +49,9 @@ def list_chats(user_id: str):
 
 def delete_chat(user_id: str, chat_id: str):
     response = chat_table.query(
-        KeyConditionExpression=Key("user_id").eq(user_id) & Key("chat_id").eq(chat_id),
-        ProjectionExpression="user_id, chat_id, time_stamp"
+        KeyConditionExpression=Key("user_id").eq(user_id),
+        FilterExpression=Attr("chat_id").eq(chat_id),
+        ProjectionExpression="user_id, time_stamp"
     )
 
     items = response.get("Items", [])
@@ -62,7 +63,7 @@ def delete_chat(user_id: str, chat_id: str):
             batch.delete_item(
                 Key={
                     "user_id": item["user_id"],
-                    "chat_id": item["chat_id"]
+                    "time_stamp": item["time_stamp"]
                 }
             )
 
@@ -71,7 +72,7 @@ def delete_chat(user_id: str, chat_id: str):
 def delete_all_chats(user_id: str):
     response = chat_table.query(
         KeyConditionExpression=Key("user_id").eq(user_id),
-        ProjectionExpression="user_id, chat_id"
+        ProjectionExpression="user_id, time_stamp"
     )
 
     items = response.get("Items", [])
@@ -83,7 +84,7 @@ def delete_all_chats(user_id: str):
             batch.delete_item(
                 Key={
                     "user_id": item["user_id"],
-                    "chat_id": item["chat_id"]
+                    "time_stamp": item["time_stamp"]
                 }
             )
 

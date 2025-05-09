@@ -81,6 +81,7 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const { chats, currentChatId, createChat, setCurrentChat, deleteChat, loadChatHistory, loadChatHistoryDetail, isLoading } = useChatStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [pendingDeleteChatId, setPendingDeleteChatId] = useState<string | null>(null);
   const { accessToken } = useAuthStore();
 
   useEffect(() => {
@@ -155,7 +156,7 @@ export function Sidebar({ className }: SidebarProps) {
                       chat={chat}
                       isActive={chat.id === currentChatId}
                       onClick={() => handleChatSelect(chat.id)}
-                      onDelete={() => deleteChat(chat.id)}
+                      onDelete={() => setPendingDeleteChatId(chat.id)}
                     />
                   ))}
                 </div>
@@ -216,7 +217,7 @@ export function Sidebar({ className }: SidebarProps) {
                     chat={chat}
                     isActive={chat.id === currentChatId}
                     onClick={() => handleChatSelect(chat.id)}
-                    onDelete={() => deleteChat(chat.id)}
+                    onDelete={() => setPendingDeleteChatId(chat.id)}
                   />
                 ))}
               </div>
@@ -238,6 +239,32 @@ export function Sidebar({ className }: SidebarProps) {
             onSelect={(chatId) => setCurrentChat(chatId)}
             onClose={() => setIsSearchOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!pendingDeleteChatId} onOpenChange={() => setPendingDeleteChatId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Chat?</DialogTitle>
+          </DialogHeader>
+          <div>Are you sure you want to delete this chat? This action cannot be undone.</div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setPendingDeleteChatId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (pendingDeleteChatId) {
+                  await deleteChat(pendingDeleteChatId);
+                  setPendingDeleteChatId(null);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

@@ -62,9 +62,9 @@ def list_chat_threads():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-@bp.route("/chat-history", methods=["DELETE"])
+@bp.route("/delete-chat", methods=["DELETE"])
 @jwt_required()
-def delete_chat_history():
+def delete_chat():
     user_id = get_jwt_identity()
     chat_id = request.args.get("chat_id")
 
@@ -80,7 +80,7 @@ def delete_chat_history():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-@bp.route("/chat-history/all", methods=["DELETE"])
+@bp.route("/delete-all-chats", methods=["DELETE"])
 @jwt_required()
 def delete_all_user_chats():
     user_id = get_jwt_identity()
