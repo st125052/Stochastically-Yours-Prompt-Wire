@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useChatStore, type Chat } from "@/store/chat-store";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,12 @@ import {
   MessageSquarePlusIcon,
   HistoryIcon,
   SearchIcon,
-  X,
+  Loader2Icon,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { ChatSearch } from "@/components/chat/chat-search";
+import { useAuthStore } from "@/store/auth-store";
 
 interface ChatItemProps {
   chat: Chat;
@@ -78,8 +79,15 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const { chats, currentChatId, createChat, setCurrentChat, deleteChat } = useChatStore();
+  const { chats, currentChatId, createChat, setCurrentChat, deleteChat, loadChatHistory, isLoading } = useChatStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { accessToken } = useAuthStore();
+
+  useEffect(() => {
+    if (accessToken) {
+      loadChatHistory(accessToken);
+    }
+  }, [accessToken, loadChatHistory]);
 
   return (
     <>
@@ -119,7 +127,12 @@ export function Sidebar({ className }: SidebarProps) {
               </Button>
             </div>
             <div className="flex-1 overflow-auto px-4 py-2">
-              {chats.length === 0 ? (
+              {isLoading ? (
+                <div className="flex h-32 flex-col items-center justify-center gap-2">
+                  <Loader2Icon className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <div className="text-sm text-muted-foreground">Loading chats...</div>
+                </div>
+              ) : chats.length === 0 ? (
                 <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-center">
                   <MessageSquarePlusIcon className="h-8 w-8 text-muted-foreground" />
                   <div className="text-sm font-medium">No chats yet</div>
@@ -175,7 +188,12 @@ export function Sidebar({ className }: SidebarProps) {
             </Button>
           </div>
           <div className="flex-1 overflow-auto px-4 py-2">
-            {chats.length === 0 ? (
+            {isLoading ? (
+              <div className="flex h-32 flex-col items-center justify-center gap-2">
+                <Loader2Icon className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="text-sm text-muted-foreground">Loading chats...</div>
+              </div>
+            ) : chats.length === 0 ? (
               <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-center">
                 <MessageSquarePlusIcon className="h-8 w-8 text-muted-foreground" />
                 <div className="text-sm font-medium">No chats yet</div>

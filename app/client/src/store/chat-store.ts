@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { chatApi, type ChatHistoryItem } from "@/services/api";
 
 export type MessageSource = {
   url: string;
@@ -31,6 +32,7 @@ type ChatStore = {
   deleteChat: (chatId: string) => void;
   addMessage: (content: string, role: "user" | "assistant", sources?: MessageSource[]) => void;
   getCurrentChat: () => Chat | undefined;
+  loadChatHistory: (token: string) => Promise<void>;
 };
 
 // Custom storage with date handling
@@ -155,6 +157,31 @@ export const useChatStore = create<ChatStore>()(
       getCurrentChat: () => {
         const { chats, currentChatId } = get();
         return chats.find((chat) => chat.id === currentChatId);
+      },
+
+      loadChatHistory: async (token: string) => {
+        try {
+          set({ isLoading: true });
+          const chatHistory = await chatApi.getChatHistory(token);
+          
+          // Convert chat history items to Chat objects
+          const chats: Chat[] = chatHistory.slice(0, 10).map((item) => ({
+            id: item.chat_id,
+            title: "Chat " + item.chat_id.slice(0, 8),
+            messages: [],
+            createdAt: new Date(item.last_used),
+            updatedAt: new Date(item.last_used),
+          }));
+
+          set((state) => ({
+            chats: [...chats, ...state.chats],
+            currentChatId: chats.length > 0 ? chats[0].id : state.currentChatId,
+            isLoading: false,
+          }));
+        } catch (error) {
+          console.error("Failed to load chat history:", error);
+          set({ isLoading: false });
+        }
       },
     }),
     {

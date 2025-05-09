@@ -19,7 +19,7 @@ type AuthState = {
 };
 
 type AuthActions = {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ accessToken: string }>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
@@ -64,6 +64,7 @@ const store = create<AuthStore>()(
           });
 
           setupTokenRefresh(store);
+          return { accessToken: data.access_token };
         } catch (error) {
           set({ isLoading: false });
           throw error;
