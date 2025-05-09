@@ -73,13 +73,6 @@ export const chatApi = {
   },
 
   sendMessage: async (token: string, message: string, chatId: string, numSources: number = 3): Promise<ChatResponse> => {
-    console.log('Sending message to API:', {
-      url: `${import.meta.env.VITE_BACKEND_URL}/chat`,
-      message,
-      chatId,
-      numSources
-    });
-
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chat`, {
       method: 'POST',
       headers: {
@@ -94,15 +87,10 @@ export const chatApi = {
     });
 
     if (!response.ok) {
-      console.error('API Error:', {
-        status: response.status,
-        statusText: response.statusText
-      });
       throw new Error("Failed to send message");
     }
 
     const data = await response.json();
-    console.log('API Response:', data);
     return data;
   },
 }; 

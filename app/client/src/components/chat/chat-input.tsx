@@ -20,36 +20,30 @@ export function ChatInput() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submit handler called', { input, accessToken, isLoading });
     
     if (!input.trim() || !accessToken) {
-      console.log('Invalid input or no token', { input, accessToken });
       return;
     }
 
     try {
-      console.log('Sending message...');
-      await sendMessage(accessToken, input.trim());
-      console.log('Message sent successfully');
       setInput("");
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
       }
+      await sendMessage(accessToken, input.trim());
     } catch (error) {
-      console.error("Failed to send message:", error);
+      // Remove all console.log, console.warn, and console.error statements
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      console.log('Enter key pressed');
       e.preventDefault();
       void handleSubmit(e);
     }
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
-    console.log('Send button clicked');
     e.preventDefault();
     void handleSubmit(e);
   };

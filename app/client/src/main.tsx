@@ -23,22 +23,18 @@ try {
           )
         : false;
       if (hasInvalidDate) {
-        console.warn("Invalid date format detected, clearing localStorage");
         localStorage.removeItem("promptwire-chats");
       }
     } catch (e) {
       // If we can't parse it, clear the storage to avoid app crashes
-      console.warn("Invalid storage data detected, clearing localStorage");
       localStorage.removeItem("promptwire-chats");
     }
   }
 } catch (e) {
   // If there's any error, clear localStorage
-  console.error("Error accessing localStorage:", e);
   try {
     localStorage.clear();
   } catch (clearError) {
-    console.error("Failed to clear localStorage:", clearError);
   }
 }
 

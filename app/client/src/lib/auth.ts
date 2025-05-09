@@ -14,9 +14,7 @@ export function setupTokenRefresh(store: any) {
     refreshTimer = setInterval(async () => {
       try {
         await refreshAccessToken();
-      } catch (error) {
-        console.error('Failed to refresh token:', error);
-      }
+      } catch (error) {}
     }, REFRESH_INTERVAL);
   }
 }

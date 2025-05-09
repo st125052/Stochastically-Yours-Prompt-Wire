@@ -14,6 +14,7 @@ export type Message = {
   role: "user" | "assistant";
   timestamp: Date;
   sources?: MessageSource[];
+  isStreaming?: boolean;
 };
 
 export type Chat = {
@@ -105,9 +106,7 @@ export const useChatStore = create<ChatStore>()(
               currentChatId: newCurrentChatId,
             };
           });
-        } catch (e) {
-          console.error('Failed to delete chat:', e);
-        }
+        } catch (e) {}
       },
 
       addMessage: (content: string, role: "user" | "assistant", sources?: MessageSource[]) => {
@@ -215,7 +214,6 @@ export const useChatStore = create<ChatStore>()(
             isLoading: false,
           });
         } catch (error) {
-          console.error("Failed to load chat history:", error);
           set({ 
             error: 'Failed to load chat history. Please try again.', 
             isLoading: false 
@@ -232,7 +230,6 @@ export const useChatStore = create<ChatStore>()(
           
           // Handle empty or invalid response
           if (!Array.isArray(response?.history)) {
-            console.log('No chat history found for chat:', chatId);
             set({ isLoading: false });
             return;
           }
@@ -262,7 +259,6 @@ export const useChatStore = create<ChatStore>()(
             isLoading: false,
           }));
         } catch (error) {
-          console.error("Failed to load chat history detail:", error);
           set({ 
             error: 'Failed to load chat messages. Please try again.', 
             isLoading: false 
@@ -274,45 +270,66 @@ export const useChatStore = create<ChatStore>()(
 
       sendMessage: async (token: string, message: string) => {
         if (get().isLoading) {
-          console.log('Already loading, ignoring message');
           return;
         }
 
         try {
-          console.log('Starting to send message:', { message });
           set({ isLoading: true, error: null });
 
-          // Get or create chat ID
           let chatId = get().currentChatId;
           if (!chatId) {
-            console.log('No current chat ID, creating new chat');
             chatId = get().createChat();
           }
-          console.log('Using chat ID:', chatId);
 
-          // Add user message immediately
           get().addMessage(message, "user");
-          console.log('Added user message to chat');
 
-          // Send message to API
-          console.log('Sending message to API...');
+          const streamingId = crypto.randomUUID();
+          set((state) => ({
+            chats: state.chats.map((chat) =>
+              chat.id === chatId
+                ? {
+                    ...chat,
+                    messages: [
+                      ...chat.messages,
+                      {
+                        id: streamingId,
+                        content: "",
+                        role: "assistant",
+                        timestamp: new Date(),
+                        isStreaming: true,
+                      },
+                    ],
+                  }
+                : chat
+            ),
+          }));
+
           const response = await chatApi.sendMessage(token, message, chatId);
-          console.log('Received API response:', response);
 
-          // Add AI response
-          get().addMessage(
-            response.response,
-            "assistant",
-            response.sources
-          );
-          console.log('Added AI response to chat');
-
-          set({ isLoading: false });
+          set((state) => ({
+            chats: state.chats.map((chat) =>
+              chat.id === chatId
+                ? {
+                    ...chat,
+                    messages: chat.messages.map((msg) =>
+                      msg.id === streamingId
+                        ? {
+                            ...msg,
+                            content: response.response,
+                            sources: response.sources,
+                            isStreaming: false,
+                          }
+                        : msg
+                    ),
+                  }
+                : chat
+            ),
+            isLoading: false,
+          }));
         } catch (error) {
-          console.error("Failed to send message:", error);
-          set({ 
-            error: 'Failed to send message. Please try again.', 
-            isLoading: false 
+          set({
+            error: 'Failed to send message. Please try again.',
+            isLoading: false,
           });
         }
       },
