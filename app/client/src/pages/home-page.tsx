@@ -21,10 +21,10 @@ export function HomePage() {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-zinc-800 to-zinc-500 dark:from-white dark:to-gray-500">
-          AI-Powered News Assistant
+          AI-Powered FinancialNews Assistant
         </h1>
         <p className="mt-6 text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-          Stay informed with PromptWire's AI assistant. Get the latest news, analysis,
+          Stay informed with PromptWire's AI assistant. Get the latest financial news, analysis,
           and answers to your questions with verified sources.
         </p>
         <div className="mt-10 flex items-center justify-center gap-6">
@@ -59,7 +59,7 @@ export function HomePage() {
 
               <div className="flex justify-start">
                 <div className="bg-zinc-200 dark:bg-zinc-800 rounded-lg px-4 py-3 max-w-[80%]">
-                  <p className="text-sm text-zinc-800 dark:text-zinc-200">What can you tell me about the latest climate report?</p>
+                  <p className="text-sm text-zinc-800 dark:text-zinc-200">What can you tell me about the latest financial news?</p>
                   <p className="text-xs text-right mt-1 text-zinc-500">9:32 AM</p>
                 </div>
               </div>
@@ -67,18 +67,18 @@ export function HomePage() {
               <div className="flex justify-end">
                 <div className="bg-blue-600 rounded-lg px-4 py-3 max-w-[80%]">
                   <p className="text-sm text-white">
-                    The latest IPCC climate report warns that urgent action is needed to limit global warming.
-                    Here are some key findings:
+                    Recent market analysis shows significant shifts in global financial markets.
+                    Here are the key market insights:
                   </p>
                   <ul className="mt-2 text-sm list-disc pl-5 space-y-1 text-white">
-                    <li>Global temperatures have risen 1.1°C since pre-industrial times</li>
-                    <li>Current policies are projected to lead to 2.8°C warming by 2100</li>
-                    <li>CO₂ emissions must decrease 45% by 2030 to limit warming to 1.5°C</li>
+                    <li>Global markets show increased volatility amid economic uncertainty</li>
+                    <li>Tech sector leads market gains with AI-driven growth</li>
+                    <li>Central banks maintain cautious stance on interest rates</li>
                   </ul>
                   <div className="mt-3 text-xs border-t border-blue-500 pt-2">
                     <div className="font-medium text-white">Sources:</div>
-                    <p className="text-blue-300 underline">ipcc.ch/report/ar6/wg3/</p>
-                    <p className="text-blue-300 underline">climate.nasa.gov/evidence/</p>
+                    <p className="text-blue-300 underline">bloomberg.com/markets</p>
+                    <p className="text-blue-300 underline">reuters.com/business</p>
                   </div>
                   <p className="text-xs text-right mt-1 text-blue-300">9:33 AM</p>
                 </div>
