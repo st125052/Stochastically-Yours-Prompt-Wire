@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { useToast } from "@/hooks/use-toast";
+import { setupTokenRefresh, clearTokenRefresh } from "@/lib/auth";
 
 export type User = {
   id: string;
@@ -9,59 +10,105 @@ export type User = {
   avatar?: string;
 };
 
-type AuthStore = {
+type AuthState = {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+};
+
+type AuthActions = {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
+  refreshAccessToken: () => Promise<void>;
 };
 
-// This is a mock function that would be replaced with a real API call
-const mockApiCall = (success = true, delay = 1000): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (success) {
-        resolve({ data: {} });
-      } else {
-        reject(new Error("API call failed"));
-      }
-    }, delay);
-  });
-};
+type AuthStore = AuthState & AuthActions;
+
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       isLoading: false,
       isAuthenticated: false,
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
-          // This would be a real API call
-          await mockApiCall();
-          // Mock user data
-          const user: User = {
-            id: "user-1",
-            email,
-            name: email.split("@")[0],
-          };
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: email, password }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Login failed');
+          }
+
+          const data = await response.json();
+          
           set({
-            user,
-            token: "mock-jwt-token",
+            user: { id: email, email, name: email.split('@')[0] },
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token,
             isAuthenticated: true,
             isLoading: false,
           });
+
+          setupTokenRefresh();
         } catch (error) {
           set({ isLoading: false });
           throw error;
         }
+      },
+
+      refreshAccessToken: async () => {
+        const { refreshToken } = get();
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        try {
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/refresh`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to refresh token');
+          }
+
+          const data = await response.json();
+          set({ accessToken: data.access_token });
+        } catch (error) {
+          get().logout();
+          throw error;
+        }
+      },
+
+      logout: () => {
+        clearTokenRefresh();
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
+      },
+
+      setUser: (user: User) => {
+        set({ user });
       },
 
       register: async (name: string, email: string, password: string) => {
@@ -88,21 +135,16 @@ export const useAuthStore = create<AuthStore>()(
           throw error;
         }
       },
-
-      logout: () => {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-        });
-      },
-
-      setUser: (user: User) => {
-        set({ user });
-      },
     }),
     {
       name: "promptwire-auth",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );
