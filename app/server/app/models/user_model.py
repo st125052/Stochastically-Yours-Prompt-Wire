@@ -1,5 +1,5 @@
 import bcrypt
-from datetime import datetime
+from datetime import datetime, timezone
 from app.dynamo_utils import get_dynamodb_resource
 from instance.config import get_env_variable
 
@@ -28,7 +28,7 @@ def create_user(user_id: str, name: str, email: str, password: str) -> bool:
         'name': name,
         'email': email,
         'password_hash': hashed_pw,
-        'created_at': datetime.now(datetime.UTC).isoformat()
+        'created_at': datetime.now(timezone.utc).isoformat()
     })
     return True
 

@@ -67,7 +67,7 @@ export const useAuthStore = create<AuthStore>()(
       register: async (name: string, email: string, password: string) => {
         set({ isLoading: true });
         try {
-          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/register`, {
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/register`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
