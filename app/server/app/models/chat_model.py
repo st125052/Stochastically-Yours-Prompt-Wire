@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 from app.dynamo_utils import get_dynamodb_resource
 from instance.config import get_env_variable
 
@@ -20,7 +20,8 @@ def store_message(user_id: str, chat_id: str, role: str, message: str):
 
 def get_chat_history(user_id: str, chat_id: str):
     response = chat_table.query(
-        KeyConditionExpression=Key("user_id").eq(user_id) & Key("chat_id").eq(chat_id),
+        KeyConditionExpression=Key("user_id").eq(user_id),
+        FilterExpression=Attr("chat_id").eq(chat_id),
         ScanIndexForward=True
     )
     return response.get("Items", [])
