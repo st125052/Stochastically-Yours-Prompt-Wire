@@ -22,11 +22,11 @@ def chat():
     user_id = get_jwt_identity()
 
     try:
-        store_message(user_id, chat_id, "user", question)
+        store_message(user_id, chat_id, "user", question, [])
 
         answer, sources = get_ai_answer(question, k)
 
-        store_message(user_id, chat_id, "assistant", answer)
+        store_message(user_id, chat_id, "assistant", answer, sources)
 
         return jsonify({
             "response": answer,

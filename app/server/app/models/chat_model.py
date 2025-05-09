@@ -7,7 +7,7 @@ CHAT_TABLE = get_env_variable("DYNAMODB_CHAT_TABLE")
 dynamodb = get_dynamodb_resource()
 chat_table = dynamodb.Table(CHAT_TABLE)
 
-def store_message(user_id: str, chat_id: str, role: str, message: str):
+def store_message(user_id: str, chat_id: str, role: str, message: str, sources: list[str]):
     time_stamp = datetime.now(timezone.utc).isoformat()
 
     chat_table.put_item(Item={
@@ -15,7 +15,8 @@ def store_message(user_id: str, chat_id: str, role: str, message: str):
         "time_stamp": time_stamp,
         "chat_id": chat_id,
         "role": role,
-        "message": message
+        "message": message,
+        "sources": sources
     })
 
 def get_chat_history(user_id: str, chat_id: str):
