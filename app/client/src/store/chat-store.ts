@@ -87,7 +87,7 @@ export const useChatStore = create<ChatStore>()(
         if (!accessToken) return;
         try {
           // Call backend to delete chat
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chat-history?chat_id=${chatId}`, {
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/delete-chat?chat_id=${chatId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
