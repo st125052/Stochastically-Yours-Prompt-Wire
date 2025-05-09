@@ -1,0 +1,39 @@
+# Node modules and dependencies
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build output
+dist
+out
+build
+.next
+
+# Version control
+.git
+.gitignore
+
+# Editor and environment files
+.vscode
+.idea
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache and temporary files
+.cache
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Test files
+**/__tests__
+**/*.test.*
+**/*.spec.*
+
+# Other
+README.md
+LICENSE
+.editorconfig
