@@ -76,7 +76,7 @@ export function ChatWindow() {
               </Button>
             </div>
           </div>
-        ) : isLoading ? (
+        ) : currentChat?.messages.length === 0 && isLoading ? (
           <div className="flex h-full flex-col items-center justify-center p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Loading chat history...</p>

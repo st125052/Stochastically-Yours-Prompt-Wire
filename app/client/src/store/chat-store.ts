@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { chatApi, type ChatHistoryItem, type ChatMessage } from "@/services/api";
+import { useAuthStore } from "@/store/auth-store";
 
 export type MessageSource = {
   url: string;
@@ -81,21 +82,32 @@ export const useChatStore = create<ChatStore>()(
         set({ currentChatId: chatId });
       },
 
-      deleteChat: (chatId: string) => {
-        set((state) => {
-          const newChats = state.chats.filter((chat) => chat.id !== chatId);
-          let newCurrentChatId = state.currentChatId;
-
-          // If we're deleting the current chat, select another one
-          if (state.currentChatId === chatId) {
-            newCurrentChatId = newChats.length > 0 ? newChats[0].id : null;
-          }
-
-          return {
-            chats: newChats,
-            currentChatId: newCurrentChatId,
-          };
-        });
+      deleteChat: async (chatId: string) => {
+        const accessToken = useAuthStore.getState().accessToken;
+        if (!accessToken) return;
+        try {
+          // Call backend to delete chat
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chat-history?chat_id=${chatId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+          if (!res.ok) throw new Error('Failed to delete chat on server');
+          set((state) => {
+            const newChats = state.chats.filter((chat) => chat.id !== chatId);
+            let newCurrentChatId = state.currentChatId;
+            if (state.currentChatId === chatId) {
+              newCurrentChatId = newChats.length > 0 ? newChats[0].id : null;
+            }
+            return {
+              chats: newChats,
+              currentChatId: newCurrentChatId,
+            };
+          });
+        } catch (e) {
+          console.error('Failed to delete chat:', e);
+        }
       },
 
       addMessage: (content: string, role: "user" | "assistant", sources?: MessageSource[]) => {
@@ -168,11 +180,9 @@ export const useChatStore = create<ChatStore>()(
 
       loadChatHistory: async (token: string) => {
         if (get().isLoading) return;
-
         try {
           set({ isLoading: true, error: null });
           const response = await chatApi.getChatHistory(token);
-          
           if (!response || !Array.isArray(response.chats)) {
             set({ 
               error: 'Invalid chat history response', 
@@ -180,26 +190,30 @@ export const useChatStore = create<ChatStore>()(
             });
             return;
           }
-
           if (response.chats.length === 0) {
             set({ isLoading: false });
             return;
           }
-
           // Preserve the exact chat_id from the backend
-          const chats: Chat[] = response.chats.slice(0, 10).map((item) => ({
+          let chats = response.chats.slice(0, 10).map((item) => ({
             id: item.chat_id, // Use the exact chat_id from backend
             title: item.title || "Chat " + item.chat_id.slice(0, 8),
             messages: [],
             createdAt: new Date(item.last_used),
             updatedAt: new Date(item.last_used),
           }));
-
-          set((state) => ({
-            chats: [...chats, ...state.chats],
-            currentChatId: chats.length > 0 ? chats[0].id : state.currentChatId,
+          // Deduplicate by chat id
+          const seen = new Set();
+          chats = chats.filter(chat => {
+            if (seen.has(chat.id)) return false;
+            seen.add(chat.id);
+            return true;
+          });
+          set({
+            chats,
+            currentChatId: chats.length > 0 ? chats[0].id : get().currentChatId,
             isLoading: false,
-          }));
+          });
         } catch (error) {
           console.error("Failed to load chat history:", error);
           set({ 
