@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "weaviate/**"
+      - "app/weaviate/**"
   workflow_dispatch:
 
 jobs:
@@ -54,7 +54,7 @@ jobs:
         run: |
           docker build -t st125052/mlops-final-project:latest-deployment .
           docker push st125052/mlops-final-project:latest-deployment
-        working-directory: ./weaviate
+        working-directory: ./app/weaviate
         if: success()
 
       - name: Install SSH Client and Pass
