@@ -160,12 +160,23 @@ export const useChatStore = create<ChatStore>()(
       },
 
       loadChatHistory: async (token: string) => {
+        if (get().isLoading) return;
+
         try {
           set({ isLoading: true });
-          const chatHistory = await chatApi.getChatHistory(token);
+          const response = await chatApi.getChatHistory(token);
           
-          // Convert chat history items to Chat objects
-          const chats: Chat[] = chatHistory.slice(0, 10).map((item) => ({
+          if (!response || !Array.isArray(response.chats)) {
+            console.error('Invalid chat history response:', response);
+            return;
+          }
+
+          if (response.chats.length === 0) {
+            set({ isLoading: false });
+            return;
+          }
+
+          const chats: Chat[] = response.chats.slice(0, 10).map((item) => ({
             id: item.chat_id,
             title: "Chat " + item.chat_id.slice(0, 8),
             messages: [],

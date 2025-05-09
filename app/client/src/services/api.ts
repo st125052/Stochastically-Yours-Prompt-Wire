@@ -5,8 +5,12 @@ export interface ChatHistoryItem {
   last_used: string;
 }
 
+export interface ChatHistoryResponse {
+  chats: ChatHistoryItem[];
+}
+
 export const chatApi = {
-  getChatHistory: async (token: string): Promise<ChatHistoryItem[]> => {
+  getChatHistory: async (token: string): Promise<ChatHistoryResponse> => {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chats`, {
       headers: {
         Authorization: `Bearer ${token}`,

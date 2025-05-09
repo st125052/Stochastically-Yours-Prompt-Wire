@@ -5,7 +5,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/store/auth-store";
-import { useChatStore } from "@/store/chat-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +22,6 @@ export function LoginForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login, isLoading } = useAuthStore();
-  const { loadChatHistory } = useChatStore();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -40,10 +38,7 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const { accessToken } = await login(data.email, data.password);
-      if (accessToken) {
-        await loadChatHistory(accessToken);
-      }
+      await login(data.email, data.password);
       toast({
         title: "Success",
         description: "You have been logged in successfully.",
