@@ -220,6 +220,7 @@ const storeFactory = (set: any, get: any) => ({
         content: msg.message,
         role: msg.role === "assistant" ? "assistant" : "user",
         timestamp: new Date(msg.time_stamp || Date.now()),
+        sources: msg.sources || [],
       }));
 
       set((state: any) => ({
