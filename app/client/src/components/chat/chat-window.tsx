@@ -94,9 +94,15 @@ export function ChatWindow() {
             </div>
           </div>
         ) : (
-          currentChat?.messages.map((message) => (
-            <ChatBubble key={message.id} message={message} />
-          ))
+          currentChat?.messages.map((message, idx, arr) => {
+            const isLast = idx === arr.length - 1;
+            const isAssistant = message.role === "assistant";
+            // Show typing effect only for the last assistant message while loading
+            const isStreaming = isLast && isAssistant && isLoading;
+            return (
+              <ChatBubble key={message.id} message={message} isStreaming={isStreaming} />
+            );
+          })
         )}
       </div>
       <div className="p-4 pt-2 sticky bottom-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800">

@@ -47,25 +47,46 @@ export function ChatBubble({ message, isStreaming = false }: ChatBubbleProps) {
           )}
 
           {/* Sources for assistant messages */}
-          {!isUser && message.sources && message.sources.length > 0 && (
+          {!isUser && Array.isArray(message.sources) && message.sources.length > 0 && (
             <div className="mt-3 space-y-1 border-t border-zinc-200 dark:border-zinc-700 pt-2">
               <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Sources:</div>
               <ul className="space-y-1">
-                {message.sources.map((source) => (
-                  <li key={source.url} className="flex items-center gap-1 text-xs">
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
-                    >
-                      <ExternalLinkIcon className="h-3 w-3 flex-shrink-0" />
-                      <span className="max-w-[230px] overflow-hidden text-ellipsis">
-                        {source.title}
-                      </span>
-                    </a>
-                  </li>
-                ))}
+                {message.sources.map((source, idx) => {
+                  if (typeof source === 'string') {
+                    return (
+                      <li key={source} className="flex items-center gap-1 text-xs">
+                        <a
+                          href={source}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                        >
+                          <ExternalLinkIcon className="h-3 w-3 flex-shrink-0" />
+                          <span className="max-w-[230px] overflow-hidden text-ellipsis">
+                            {source}
+                          </span>
+                        </a>
+                      </li>
+                    );
+                  } else if (typeof source === 'object' && source.url) {
+                    return (
+                      <li key={source.url} className="flex items-center gap-1 text-xs">
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                        >
+                          <ExternalLinkIcon className="h-3 w-3 flex-shrink-0" />
+                          <span className="max-w-[230px] overflow-hidden text-ellipsis">
+                            {source.title || source.url}
+                          </span>
+                        </a>
+                      </li>
+                    );
+                  }
+                  return null;
+                })}
               </ul>
             </div>
           )}
