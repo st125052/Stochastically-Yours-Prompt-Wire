@@ -6,7 +6,7 @@ from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity
 )
-from app.models.user_model import create_user, get_user, verify_password
+from app.models.user_model import create_user, get_user, verify_password, get_user_by_email
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -37,18 +37,18 @@ def register():
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
-    user_id = data.get("user_id")
+    email = data.get("email")
     password = data.get("password")
 
-    if not user_id or not password:
-        return jsonify({"error": "user_id and password required"}), 400
+    if not email or not password:
+        return jsonify({"error": "email and password required"}), 400
 
-    user = get_user(user_id)
+    user = get_user_by_email(email)
     if not user or not verify_password(password, user["password_hash"]):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    access_token = create_access_token(identity=user_id)
-    refresh_token = create_refresh_token(identity=user_id)
+    access_token = create_access_token(identity=user["user_id"])
+    refresh_token = create_refresh_token(identity=user["user_id"])
 
     return jsonify({
         "access_token": access_token,

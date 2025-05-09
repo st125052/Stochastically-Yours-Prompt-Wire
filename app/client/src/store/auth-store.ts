@@ -45,7 +45,7 @@ const store = create<AuthStore>()(
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ user_id: email, password }),
+            body: JSON.stringify({ email, password }),
           });
 
           if (!response.ok) {

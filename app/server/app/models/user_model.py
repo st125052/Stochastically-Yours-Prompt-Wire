@@ -35,3 +35,11 @@ def create_user(user_id: str, name: str, email: str, password: str) -> bool:
 def get_user(user_id: str):
     response = users_table.get_item(Key={'user_id': user_id})
     return response.get('Item')
+
+def get_user_by_email(email: str):
+    response = users_table.scan(
+        FilterExpression='email = :email',
+        ExpressionAttributeValues={':email': email}
+    )
+    items = response.get('Items', [])
+    return items[0] if items else None
