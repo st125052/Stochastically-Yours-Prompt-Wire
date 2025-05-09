@@ -64,7 +64,7 @@ def list_chat_threads():
     
 @bp.route("/delete-chat", methods=["DELETE"])
 @jwt_required()
-def delete_chat():
+def delete_user_chat():
     user_id = get_jwt_identity()
     chat_id = request.args.get("chat_id")
 
