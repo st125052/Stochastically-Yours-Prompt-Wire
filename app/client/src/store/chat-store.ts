@@ -241,7 +241,7 @@ export const useChatStore = create<ChatStore>()(
           const messages: Message[] = response.history.map((msg) => ({
             id: crypto.randomUUID(),
             content: msg.message,
-            role: msg.role === "ai" ? "assistant" : "user",
+            role: msg.role === "assistant" ? "assistant" : "user",
             timestamp: new Date(msg.time_stamp || Date.now()),
             // sources: msg.sources ? msg.sources.map(source => ({ url: source.url, title: source.title })) : undefined
           }));
