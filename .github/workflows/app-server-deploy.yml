@@ -24,7 +24,6 @@ jobs:
           git checkout main
           git pull origin main
         if: success()
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         if: success()
@@ -37,6 +36,23 @@ jobs:
           password: ${{ secrets.HEROKU_API_KEY }}
         if: success()
 
+      - name: Create .env file
+        run: |
+          cat <<EOF > app/server/.env
+          VITE_JWT_SECRET_KEY=${{ secrets.VITE_JWT_SECRET_KEY }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          DYNAMODB_USERS_TABLE=${{ secrets.DYNAMODB_USERS_TABLE }}
+          DYNAMODB_CHAT_TABLE=${{ secrets.DYNAMODB_CHAT_TABLE }}
+          DYNAMODB_ARTICLES_TABLE=${{ secrets.DYNAMODB_ARTICLES_TABLE }}
+          FRONTEND_URLS=${{ secrets.FRONTEND_URLS }}
+          QUERY_TASK_API_URL=${{ secrets.QUERY_TASK_API_URL }}
+          PORT=${{ secrets.PORT }}
+          DEBUG=${{ secrets.DEBUG }}
+          EOF
+        if: success()
       - name: Build and Push Docker Image To HCR
         run: |
           docker build -t registry.heroku.com/mlops-final-project-server/web .

@@ -5,7 +5,7 @@ from instance.config import get_env_variable
 from .routes import bp as api_bp
 from .auth import auth_bp
 
-JWT_SECRET_KEY = get_env_variable("JWT_SECRET_KEY")
+JWT_SECRET_KEY = get_env_variable("VITE_JWT_SECRET_KEY")
 ALLOWED_ORIGINS = get_env_variable("FRONTEND_URLS").split(",")
 
 jwt = JWTManager()
