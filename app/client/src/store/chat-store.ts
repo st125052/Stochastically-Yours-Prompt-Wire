@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { chatApi, type ChatHistoryItem } from "@/services/api";
+import { chatApi, type ChatHistoryItem, type ChatMessage } from "@/services/api";
 
 export type MessageSource = {
   url: string;
@@ -27,12 +27,16 @@ type ChatStore = {
   chats: Chat[];
   currentChatId: string | null;
   isLoading: boolean;
-  createChat: () => void;
+  error: string | null;
+  createChat: () => string;
   setCurrentChat: (chatId: string) => void;
   deleteChat: (chatId: string) => void;
   addMessage: (content: string, role: "user" | "assistant", sources?: MessageSource[]) => void;
   getCurrentChat: () => Chat | undefined;
   loadChatHistory: (token: string) => Promise<void>;
+  loadChatHistoryDetail: (token: string, chatId: string) => Promise<void>;
+  clearError: () => void;
+  sendMessage: (token: string, message: string) => Promise<void>;
 };
 
 // Custom storage with date handling
@@ -54,6 +58,7 @@ export const useChatStore = create<ChatStore>()(
       chats: [],
       currentChatId: null,
       isLoading: false,
+      error: null,
 
       createChat: () => {
         const newChat: Chat = {
@@ -68,6 +73,8 @@ export const useChatStore = create<ChatStore>()(
           chats: [newChat, ...state.chats],
           currentChatId: newChat.id,
         }));
+
+        return newChat.id;
       },
 
       setCurrentChat: (chatId: string) => {
@@ -163,11 +170,14 @@ export const useChatStore = create<ChatStore>()(
         if (get().isLoading) return;
 
         try {
-          set({ isLoading: true });
+          set({ isLoading: true, error: null });
           const response = await chatApi.getChatHistory(token);
           
           if (!response || !Array.isArray(response.chats)) {
-            console.error('Invalid chat history response:', response);
+            set({ 
+              error: 'Invalid chat history response', 
+              isLoading: false 
+            });
             return;
           }
 
@@ -176,9 +186,10 @@ export const useChatStore = create<ChatStore>()(
             return;
           }
 
+          // Preserve the exact chat_id from the backend
           const chats: Chat[] = response.chats.slice(0, 10).map((item) => ({
-            id: item.chat_id,
-            title: "Chat " + item.chat_id.slice(0, 8),
+            id: item.chat_id, // Use the exact chat_id from backend
+            title: item.title || "Chat " + item.chat_id.slice(0, 8),
             messages: [],
             createdAt: new Date(item.last_used),
             updatedAt: new Date(item.last_used),
@@ -191,23 +202,116 @@ export const useChatStore = create<ChatStore>()(
           }));
         } catch (error) {
           console.error("Failed to load chat history:", error);
+          set({ 
+            error: 'Failed to load chat history. Please try again.', 
+            isLoading: false 
+          });
+        }
+      },
+
+      loadChatHistoryDetail: async (token: string, chatId: string) => {
+        if (get().isLoading) return;
+
+        try {
+          set({ isLoading: true, error: null });
+          const response = await chatApi.getChatHistoryDetail(token, chatId);
+          
+          // Handle empty or invalid response
+          if (!response?.history?.messages) {
+            console.log('No chat history found for chat:', chatId);
+            set({ isLoading: false });
+            return;
+          }
+
+          const chatDetail = response.history;
+
+          // Convert API messages to our Message format
+          const messages: Message[] = chatDetail.messages.map((msg) => ({
+            id: crypto.randomUUID(),
+            content: msg.message,
+            role: msg.role === "ai" ? "assistant" : "user",
+            timestamp: new Date(msg.timestamp || Date.now()),
+            sources: msg.sources?.map(source => ({
+              url: source.url,
+              title: source.title
+            }))
+          }));
+
+          // Update the chat in our store
+          set((state) => ({
+            chats: state.chats.map((chat) => {
+              if (chat.id === chatId) {
+                return {
+                  ...chat,
+                  messages,
+                  title: chatDetail.title || chat.title,
+                  updatedAt: new Date()
+                };
+              }
+              return chat;
+            }),
+            isLoading: false,
+          }));
+        } catch (error) {
+          console.error("Failed to load chat history detail:", error);
+          set({ 
+            error: 'Failed to load chat messages. Please try again.', 
+            isLoading: false 
+          });
+        }
+      },
+
+      clearError: () => set({ error: null }),
+
+      sendMessage: async (token: string, message: string) => {
+        if (get().isLoading) {
+          console.log('Already loading, ignoring message');
+          return;
+        }
+
+        try {
+          console.log('Starting to send message:', { message });
+          set({ isLoading: true, error: null });
+
+          // Get or create chat ID
+          let chatId = get().currentChatId;
+          if (!chatId) {
+            console.log('No current chat ID, creating new chat');
+            chatId = get().createChat();
+          }
+          console.log('Using chat ID:', chatId);
+
+          // Add user message immediately
+          get().addMessage(message, "user");
+          console.log('Added user message to chat');
+
+          // Send message to API
+          console.log('Sending message to API...');
+          const response = await chatApi.sendMessage(token, message, chatId);
+          console.log('Received API response:', response);
+
+          // Add AI response
+          get().addMessage(
+            response.response,
+            "assistant",
+            response.sources
+          );
+          console.log('Added AI response to chat');
+
           set({ isLoading: false });
+        } catch (error) {
+          console.error("Failed to send message:", error);
+          set({ 
+            error: 'Failed to send message. Please try again.', 
+            isLoading: false 
+          });
         }
       },
     }),
     {
       name: "promptwire-chats",
       storage: customStorage,
-      // Add a version number for the storage
       version: 1,
-      // Optional migration for older versions
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          console.log('State rehydrated successfully');
-        } else {
-          console.warn('Failed to rehydrate state');
-        }
-      }
     }
   )
 );

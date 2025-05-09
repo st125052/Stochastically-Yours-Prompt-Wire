@@ -79,7 +79,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const { chats, currentChatId, createChat, setCurrentChat, deleteChat, loadChatHistory, isLoading } = useChatStore();
+  const { chats, currentChatId, createChat, setCurrentChat, deleteChat, loadChatHistory, loadChatHistoryDetail, isLoading } = useChatStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { accessToken } = useAuthStore();
 
@@ -88,6 +88,13 @@ export function Sidebar({ className }: SidebarProps) {
       loadChatHistory(accessToken);
     }
   }, [accessToken, loadChatHistory]);
+
+  const handleChatSelect = async (chatId: string) => {
+    setCurrentChat(chatId);
+    if (accessToken) {
+      await loadChatHistoryDetail(accessToken, chatId);
+    }
+  };
 
   return (
     <>
@@ -147,7 +154,7 @@ export function Sidebar({ className }: SidebarProps) {
                       key={chat.id}
                       chat={chat}
                       isActive={chat.id === currentChatId}
-                      onClick={() => setCurrentChat(chat.id)}
+                      onClick={() => handleChatSelect(chat.id)}
                       onDelete={() => deleteChat(chat.id)}
                     />
                   ))}
@@ -208,7 +215,7 @@ export function Sidebar({ className }: SidebarProps) {
                     key={chat.id}
                     chat={chat}
                     isActive={chat.id === currentChatId}
-                    onClick={() => setCurrentChat(chat.id)}
+                    onClick={() => handleChatSelect(chat.id)}
                     onDelete={() => deleteChat(chat.id)}
                   />
                 ))}

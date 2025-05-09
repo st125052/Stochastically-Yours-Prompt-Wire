@@ -3,12 +3,12 @@ import { useChatStore } from "@/store/chat-store";
 import { Button } from "@/components/ui/button";
 import { ChatBubble } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
-import { MessageSquarePlusIcon, Newspaper } from "lucide-react";
+import { MessageSquarePlusIcon, Newspaper, Loader2, AlertCircle } from "lucide-react";
 import { ChatPersona } from "./chat-persona";
 
 export function ChatWindow() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const { getCurrentChat, createChat, currentChatId } = useChatStore();
+  const { getCurrentChat, createChat, currentChatId, isLoading, error, clearError } = useChatStore();
   const currentChat = getCurrentChat();
 
   // Scroll to bottom
@@ -51,7 +51,7 @@ export function ChatWindow() {
         <div className="flex items-center gap-3">
           <ChatPersona />
           <div>
-            <h2 className="font-semibold text-sm text-foreground">PromptWire News</h2>
+            <h2 className="font-semibold text-sm text-foreground">{currentChat?.title || "New Chat"}</h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">Your AI news assistant</p>
           </div>
         </div>
@@ -61,7 +61,27 @@ export function ChatWindow() {
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto p-4 pb-0 space-y-2"
       >
-        {currentChat?.messages.length === 0 ? (
+        {error ? (
+          <div className="flex h-full flex-col items-center justify-center p-4">
+            <div className="max-w-md text-center">
+              <AlertCircle className="mx-auto h-10 w-10 text-red-500" />
+              <h2 className="mt-4 text-xl font-bold text-foreground">Error Loading Chat</h2>
+              <p className="mt-2 text-zinc-500 dark:text-zinc-400 text-sm">{error}</p>
+              <Button 
+                className="mt-4" 
+                variant="outline" 
+                onClick={clearError}
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        ) : isLoading ? (
+          <div className="flex h-full flex-col items-center justify-center p-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Loading chat history...</p>
+          </div>
+        ) : currentChat?.messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center p-4">
             <div className="max-w-md text-center">
               <MessageSquarePlusIcon className="mx-auto h-10 w-10 text-zinc-400" />
