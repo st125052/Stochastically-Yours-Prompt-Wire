@@ -176,3 +176,31 @@ svg path, svg circle, svg rect, svg line,
     will-change: width, height, opacity;
   }
 }
+
+/* Shiny text effect for heading */
+.shiny-text {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    #fff 0%,
+    #b3b3b3 20%,
+    #fff 40%,
+    #b3b3b3 60%,
+    #fff 80%,
+    #b3b3b3 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: shine 2s linear infinite;
+}
+
+@keyframes shine {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
