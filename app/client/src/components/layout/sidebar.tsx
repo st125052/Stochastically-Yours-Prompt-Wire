@@ -38,6 +38,12 @@ interface ChatItemProps {
 function ChatItem({ chat, isActive, onClick, onDelete }: ChatItemProps) {
   const [showDelete, setShowDelete] = useState(false);
 
+  // Use the first user message as the chat name if available
+  const firstUserMessage = chat.messages && chat.messages.length > 0
+    ? chat.messages.find((msg) => msg.role === "user")?.content
+    : null;
+  const displayTitle = firstUserMessage || chat.title;
+
   return (
     <div
       className={cn(
@@ -51,7 +57,7 @@ function ChatItem({ chat, isActive, onClick, onDelete }: ChatItemProps) {
         className="flex-1 overflow-hidden text-left"
         onClick={onClick}
       >
-        <div className="truncate">{chat.title}</div>
+        <div className="truncate">{displayTitle}</div>
         <div className="text-xs text-muted-foreground">
           {formatDate(chat.updatedAt)}
         </div>
