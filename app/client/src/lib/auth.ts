@@ -1,12 +1,10 @@
-import { useAuthStore } from "@/store/auth-store";
-
 // Token refresh interval in milliseconds (10 minutes)
 const REFRESH_INTERVAL = 10 * 60 * 1000;
 
 let refreshTimer: NodeJS.Timeout | null = null;
 
-export function setupTokenRefresh() {
-  const { refreshAccessToken, accessToken, refreshToken } = useAuthStore.getState();
+export function setupTokenRefresh(store: any) {
+  const { refreshAccessToken, accessToken, refreshToken } = store.getState();
 
   if (refreshTimer) {
     clearInterval(refreshTimer);
@@ -28,7 +26,4 @@ export function clearTokenRefresh() {
     clearInterval(refreshTimer);
     refreshTimer = null;
   }
-}
-
-// Setup token refresh when the app starts
-setupTokenRefresh(); 
+} 

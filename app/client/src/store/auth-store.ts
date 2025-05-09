@@ -28,8 +28,7 @@ type AuthActions = {
 
 type AuthStore = AuthState & AuthActions;
 
-
-export const useAuthStore = create<AuthStore>()(
+const store = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
@@ -64,7 +63,7 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
           });
 
-          setupTokenRefresh();
+          setupTokenRefresh(store);
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -148,3 +147,11 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
+
+// Initialize token refresh if we have tokens
+const state = store.getState();
+if (state.accessToken && state.refreshToken) {
+  setupTokenRefresh(store);
+}
+
+export const useAuthStore = store;
