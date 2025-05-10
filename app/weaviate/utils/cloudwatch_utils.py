@@ -16,8 +16,8 @@ def get_logger():
     )
 
     handler = watchtower.CloudWatchLogHandler(
-        log_group=get_env_variable("WEAVIATE_LOG_GROUP"),
-        stream_name=get_env_variable("WEAVIATE_LOG_STREAM"),
+        log_group_name=get_env_variable("WEAVIATE_LOG_GROUP"),
+        log_stream_name=get_env_variable("WEAVIATE_LOG_STREAM"),
         boto3_client=boto3_client
     )
 
