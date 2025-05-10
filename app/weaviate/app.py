@@ -10,6 +10,7 @@ from routes.list_article_by_id import list_article_id_bp
 from routes.list_articles import list_bp
 from routes.delete_article import delete_bp
 from routes.add_article import add_article_bp
+from routes.count_articles import count_bp
 
 PORT = int(get_env_variable("PORT", 5000))
 DEBUG = get_env_variable("DEBUG", "false").lower() == "true"
@@ -29,6 +30,7 @@ app.register_blueprint(list_article_id_bp)
 app.register_blueprint(list_bp)
 app.register_blueprint(delete_bp)
 app.register_blueprint(add_article_bp)
+app.register_blueprint(count_bp)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=DEBUG)
