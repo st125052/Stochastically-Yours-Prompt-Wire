@@ -110,16 +110,4 @@ Prompt Wire is an AI-powered chat platform focused on financial news. Users inte
 
 ---
 
-## 🤝 Contributing
-
-Pull requests and issues are welcome! Please open an issue to discuss your ideas or report bugs.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
 **Built with ❤️ by the Prompt Wire team.**
