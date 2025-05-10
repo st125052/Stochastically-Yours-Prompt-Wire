@@ -49,6 +49,8 @@ jobs:
           DYNAMODB_ARTICLES_TABLE=${{ secrets.DYNAMODB_ARTICLES_TABLE }}
           FRONTEND_URLS=${{ secrets.FRONTEND_URLS }}
           QUERY_TASK_API_URL=${{ secrets.QUERY_TASK_API_URL }}
+          SERVER_LOG_GROUP=${{ secrets.SERVER_LOG_GROUP }}
+          SERVER_LOG_STREAM=${{ secrets.SERVER_LOG_STREAM }}
           PORT=${{ secrets.PORT }}
           DEBUG=${{ secrets.DEBUG }}
           EOF
