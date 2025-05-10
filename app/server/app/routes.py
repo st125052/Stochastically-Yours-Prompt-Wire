@@ -116,3 +116,7 @@ def health_check():
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
     except Exception as e:
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
+    
+@bp.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "Welcome to the Prompt Wire API"}), 200
