@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from config.env_loader import get_env_variable
 
+from routes.home import home_bp
 from routes.health import health_bp
 from routes.query_answer import query_bp
 from routes.index_article import index_bp
@@ -17,6 +18,7 @@ FRONTEND_URLS = get_env_variable("FRONTEND_URLS", "").split(",")
 app = Flask(__name__)
 CORS(app, origins=FRONTEND_URLS)
 
+app.register_blueprint(home_bp)
 app.register_blueprint(health_bp)
 app.register_blueprint(query_bp)
 app.register_blueprint(index_bp)
