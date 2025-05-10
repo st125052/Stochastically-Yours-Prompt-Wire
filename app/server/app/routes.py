@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models.chat_model import store_message, get_chat_history, list_chats, delete_chat, delete_all_chats
+from app.models.chat_model import store_message, get_chat_history, list_chats, delete_chat, delete_all_chats, get_recent_chat_history
 from app.utils.query_api import get_ai_answer
 from app.dynamo_utils import get_dynamodb_resource
 from instance.config import get_env_variable
@@ -24,7 +24,10 @@ def chat():
     try:
         store_message(user_id, chat_id, "user", question, [])
 
-        answer, sources = get_ai_answer(question, k)
+        chat_history = get_recent_chat_history(user_id, chat_id, limit=4)
+        if not chat_history:
+            chat_history = []
+        answer, sources = get_ai_answer(question, k, chat_history=chat_history)
 
         store_message(user_id, chat_id, "assistant", answer, sources)
 

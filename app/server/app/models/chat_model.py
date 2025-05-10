@@ -90,3 +90,19 @@ def delete_all_chats(user_id: str):
             )
 
     return True
+
+def get_recent_chat_history(user_id: str, chat_id: str, limit: int = 4):
+    response = chat_table.query(
+        KeyConditionExpression=Key("user_id").eq(user_id),
+        FilterExpression=Attr("chat_id").eq(chat_id),
+        ScanIndexForward=False, 
+        Limit=limit
+    )
+    items = response.get("Items", [])
+    items = sorted(items, key=lambda x: x["time_stamp"], reverse=True)
+    items = list(reversed(items))
+    chat_history = [
+        {"role": item["role"], "content": item["message"]}
+        for item in items
+    ]
+    return chat_history
