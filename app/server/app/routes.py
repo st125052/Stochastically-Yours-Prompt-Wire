@@ -4,7 +4,7 @@ from app.models.chat_model import store_message, get_chat_history, list_chats, d
 from app.utils.query_api import get_ai_answer
 from app.dynamo_utils import get_dynamodb_resource
 from instance.config import get_env_variable
-from utils.cloudwatch_utils import get_logger, publish_metric
+from app.utils.cloudwatch_utils import get_logger, publish_metric
 import boto3
 
 bp = Blueprint("routes", __name__)
