@@ -11,7 +11,8 @@ WEAVIATE_CLASS = get_env_variable("WEAVIATE_CLASS")
 @count_bp.route("/weaviate/count-articles", methods=["GET"])
 def count_articles():
     try:
-        count = client.collections.get(WEAVIATE_CLASS).data.count()
+        response = client.collections.get(WEAVIATE_CLASS).aggregate.over_all(total_count=True)
+        count = response.total_count
         logger.info(f"Total articles in class '{WEAVIATE_CLASS}': {count}")
         publish_metric("ArticlesCounted", 1)
 
