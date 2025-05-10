@@ -7,22 +7,20 @@ def get_logger():
     logger = logging.getLogger("promptwire")
     logger.setLevel(logging.INFO)
 
-    # Create a valid boto3 logs client
     boto3_client = boto3.client(
         "logs",
         aws_access_key_id=get_env_variable("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=get_env_variable("AWS_SECRET_ACCESS_KEY"),
+        aws_session_token=get_env_variable("AWS_SESSION_TOKEN"),
         region_name=get_env_variable("AWS_REGION")
     )
 
-    # CloudWatch log handler using boto3_client
     handler = watchtower.CloudWatchLogHandler(
         log_group=get_env_variable("WEAVIATE_LOG_GROUP"),
         stream_name=get_env_variable("WEAVIATE_LOG_STREAM"),
         boto3_client=boto3_client
     )
 
-    # Prevent duplicate handler on reload (e.g., in dev)
     if not any(isinstance(h, watchtower.CloudWatchLogHandler) for h in logger.handlers):
         logger.addHandler(handler)
 
@@ -31,9 +29,10 @@ def get_logger():
 
 def publish_metric(metric_name, value, unit="Count"):
     cloudwatch = boto3.client(
-        'cloudwatch',
+        "cloudwatch",
         aws_access_key_id=get_env_variable("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=get_env_variable("AWS_SECRET_ACCESS_KEY"),
+        aws_session_token=get_env_variable("AWS_SESSION_TOKEN"),
         region_name=get_env_variable("AWS_REGION")
     )
 
