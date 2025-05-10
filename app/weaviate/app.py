@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from config.env_loader import get_env_variable
-
+from utils.cloudwatch_utils import get_logger
 from routes.home import home_bp
 from routes.health import health_bp
 from routes.query_answer import query_bp
@@ -17,6 +17,9 @@ FRONTEND_URLS = get_env_variable("FRONTEND_URLS", "").split(",")
 
 app = Flask(__name__)
 CORS(app, origins=FRONTEND_URLS)
+
+logger = get_logger()
+logger.info("PromptWire Flask API started.")
 
 app.register_blueprint(home_bp)
 app.register_blueprint(health_bp)

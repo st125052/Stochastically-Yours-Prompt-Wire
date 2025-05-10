@@ -45,6 +45,12 @@ jobs:
           WEAVIATE_CLASS=${{ secrets.WEAVIATE_CLASS }}
           OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}
           OPENAI_TEMPERATURE=${{ secrets.OPENAI_TEMPERATURE }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          WEAVIATE_LOG_GROUP=${{ secrets.WEAVIATE_LOG_GROUP }}
+          WEAVIATE_LOG_STREAM=${{ secrets.WEAVIATE_LOG_STREAM }}
           PORT=${{ secrets.PORT }}
           DEBUG=${{ secrets.DEBUG }}
           EOF
