@@ -11,10 +11,10 @@ WEAVIATE_CLASS = get_env_variable("WEAVIATE_CLASS")
 @count_bp.route("/weaviate/count-articles", methods=["GET"])
 def count_articles():
     try:
-        total_count = client.collections.get(WEAVIATE_CLASS).aggregate.over_all().with_meta_count().do()
-        count = total_count.total
+        response = client.collections.get(WEAVIATE_CLASS).aggregate.over_all().with_meta_count().do()
+        count = response.meta.count
 
-        logger.info(f"Counted {count} articles in class '{WEAVIATE_CLASS}'")
+        logger.info(f"Total articles in class '{WEAVIATE_CLASS}': {count}")
         publish_metric("ArticlesCounted", 1)
 
         return jsonify({"total_count": count}), 200
@@ -22,4 +22,4 @@ def count_articles():
     except Exception as e:
         logger.error(f"Failed to count articles: {str(e)}", exc_info=True)
         publish_metric("CountErrors", 1)
-        return jsonify({"error": "Failed to count articles"}), 500 
+        return jsonify({"error": "Failed to count articles"}), 500
