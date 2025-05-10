@@ -154,11 +154,11 @@ def health_check():
 
     except boto3.exceptions.Boto3Error as e:
         logger.error(f"[HEALTH] Boto3Error: {str(e)}", exc_info=True)
-        publish_metric("HealthErrors", 1)
+        publish_metric("HealthChecks", 0)
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
     except Exception as e:
         logger.error(f"[HEALTH] General Error: {str(e)}", exc_info=True)
-        publish_metric("HealthErrors", 1)
+        publish_metric("HealthChecks", 0)
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
 
