@@ -4,22 +4,25 @@ import logging
 from config.env_loader import get_env_variable
 
 def get_logger():
-    session = boto3.Session(
+    logger = logging.getLogger("promptwire")
+    logger.setLevel(logging.INFO)
+
+    # Create a valid boto3 logs client
+    boto3_client = boto3.client(
+        "logs",
         aws_access_key_id=get_env_variable("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=get_env_variable("AWS_SECRET_ACCESS_KEY"),
         region_name=get_env_variable("AWS_REGION")
     )
 
+    # CloudWatch log handler using boto3_client
     handler = watchtower.CloudWatchLogHandler(
         log_group=get_env_variable("WEAVIATE_LOG_GROUP"),
         stream_name=get_env_variable("WEAVIATE_LOG_STREAM"),
-        boto3_session=session
+        boto3_client=boto3_client
     )
 
-    logger = logging.getLogger("promptwire")
-    logger.setLevel(logging.INFO)
-
-    # Prevent duplicate handler during reloads
+    # Prevent duplicate handler on reload (e.g., in dev)
     if not any(isinstance(h, watchtower.CloudWatchLogHandler) for h in logger.handlers):
         logger.addHandler(handler)
 
