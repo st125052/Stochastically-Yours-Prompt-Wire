@@ -110,4 +110,4 @@ Prompt Wire is an AI-powered chat platform focused on financial news. Users inte
 
 ---
 
-**Built with ❤️ by the Prompt Wire team.**
+**Built with ❤️ by the Stochastically Yours team.**
